@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# 가상환경
+venv/
+.venv/
+env/
+
+# 환경변수 / 비밀 정보 (API 키 등은 절대 커밋하지 않기)
+.env
+.env.*
+!.env.example
+
+# Node (프론트엔드 프레임워크 사용 시)
+node_modules/
+dist/
+build/
+
+# OCR 모델 캐시 / 업로드 파일
+.EasyOCR/
+uploads/
+*.log
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
