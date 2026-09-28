@@ -80,8 +80,4 @@ git switch main
 git pull origin main
 git switch feat/12-safe-payment-detector
 git merge main
-```
-
-## 7. 막히면
-
-Discord `#질문-오류` 채널에 **에러 메시지 전문 + 무엇을 하다가 생겼는지**를 같이 올려주세요.
+```\
