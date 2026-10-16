@@ -90,9 +90,7 @@ def check_url(url: str) -> tuple[str, str, int, str] | None:
         return ("URL_SHORTENER", "단축 URL", 1,
                 "실제 주소가 가려져 있어요. 원래 주소를 확인한 뒤 접속하세요.")
     for official in OFFICIAL_DOMAINS:       # 사칭 / 비슷한 주소
-        name = official.split(".")[0]
-        # TODO(4번): 오탐 수정 — kakaobank.com 같은 정상 사이트도 여기 걸림
-        if name in host:
+        if official in host:
             return ("URL_IMPERSONATION", "공식 사이트 사칭 의심", 3,
                     f"{official}이 아닌 주소예요. 결제 정보를 입력하지 마세요.")
         if SequenceMatcher(None, domain, official).ratio() >= 0.8:
