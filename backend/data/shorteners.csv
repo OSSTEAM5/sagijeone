@@ -1,6 +1,65 @@
 domain,service,source,checked_at
-bit.ly,Bitly,공식 홈페이지 (bitly.com),2026-10-06
-tinyurl.com,TinyURL,공식 홈페이지 (tinyurl.com),2026-10-06
-me2.do,네이버 단축 URL,(확인한 곳 적기),2026-10-06
-han.gl,han.gl,(확인한 곳 적기),2026-10-06
-url.kr,url.kr,(확인한 곳 적기),2026-10-06
+bit.ly,Bitly,공식 홈페이지 (bitly.com),2026-10-16
+kl.am,kl.am,블로그 단축 URL 목록,2026-10-16
+cli.gs,cli.gs,블로그 단축 URL 목록,2026-10-16
+bc.vc,bc.vc,블로그 단축 URL 목록,2026-10-16
+po.st,po.st,블로그 단축 URL 목록,2026-10-16
+v.gd,v.gd,블로그 단축 URL 목록,2026-10-16
+bkite.com,bkite.com,블로그 단축 URL 목록,2026-10-16
+shorl.com,shorl.com,블로그 단축 URL 목록,2026-10-16
+scrnch.me,scrnch.me,블로그 단축 URL 목록,2026-10-16
+to.ly,to.ly,블로그 단축 URL 목록,2026-10-16
+adf.ly,AdFly,블로그 단축 URL 목록,2026-10-16
+x.co,GoDaddy,블로그 단축 URL 목록,2026-10-16
+1url.com,1url.com,블로그 단축 URL 목록,2026-10-16
+ad.vu,ad.vu,블로그 단축 URL 목록,2026-10-16
+migre.me,migre.me,블로그 단축 URL 목록,2026-10-16
+su.pr,su.pr,블로그 단축 URL 목록,2026-10-16
+smallurl.co,smallurl.co,블로그 단축 URL 목록,2026-10-16
+cutt.us,cutt.us,블로그 단축 URL 목록,2026-10-16
+filoops.info,filoops.info,블로그 단축 URL 목록,2026-10-16
+shor7.com,shor7.com,블로그 단축 URL 목록,2026-10-16
+tinyurl.com,TinyURL,공식 홈페이지 (tinyurl.com),2026-10-16
+u.to,u.to,블로그 단축 URL 목록,2026-10-16
+ow.ly,Hootsuite,블로그 단축 URL 목록,2026-10-16
+ff.im,ff.im,블로그 단축 URL 목록,2026-10-16
+rubyurl.com,rubyurl.com,블로그 단축 URL 목록,2026-10-16
+r22.com,r2me.com,블로그 단축 URL 목록,2026-10-16
+post.ly,post.ly,블로그 단축 URL 목록,2026-10-16
+buzurl.com,buzurl.com,블로그 단축 URL 목록,2026-10-16
+cur.lv,cur.lv,블로그 단축 URL 목록,2026-10-16
+tr.im,tr.im,블로그 단축 URL 목록,2026-10-16
+tiny.cc,tiny.cc,블로그 단축 URL 목록,2026-10-16
+lnkd.in,LinkedIn,블로그 단축 URL 목록,2026-10-16
+q.gs,q.gs,블로그 단축 URL 목록,2026-10-16
+is.gd,is.gd,블로그 단축 URL 목록,2026-10-16
+hurl.ws,hurl.ws,블로그 단축 URL 목록,2026-10-16
+om.ly,om.ly,블로그 단축 URL 목록,2026-10-16
+qr.net,qr.net,블로그 단축 URL 목록,2026-10-16
+qr.ae,qr.ae,블로그 단축 URL 목록,2026-10-16
+snipurl.com,snipurl.com,블로그 단축 URL 목록,2026-10-16
+ity.im,ity.im,블로그 단축 URL 목록,2026-10-16
+t.co,X(트위터),블로그 단축 URL 목록,2026-10-16
+db.tt,Dropbox,블로그 단축 URL 목록,2026-10-16
+doiop.com,doiop.com,블로그 단축 URL 목록,2026-10-16
+url4.eu,url4.eu,블로그 단축 URL 목록,2026-10-16
+poprl.com,poprl.com,블로그 단축 URL 목록,2026-10-16
+tweez.me,tweez.me,블로그 단축 URL 목록,2026-10-16
+short.ie,short.ie,블로그 단축 URL 목록,2026-10-16
+me2.do,네이버 단축 URL,블로그 단축 URL 목록,2026-10-16
+bit.do,bit.do,블로그 단축 URL 목록,2026-10-16
+shorte.st,shorte.st,블로그 단축 URL 목록,2026-10-16
+go2l.ink,go2l.ink,블로그 단축 URL 목록,2026-10-16
+wp.me,WordPress,블로그 단축 URL 목록,2026-10-16
+goo.gl,Google(서비스 종료),블로그 단축 URL 목록,2026-10-16
+j.mp,Bitly,블로그 단축 URL 목록,2026-10-16
+twurl.nl,twurl.nl,블로그 단축 URL 목록,2026-10-16
+snipr.com,snipr.com,블로그 단축 URL 목록,2026-10-16
+shortto.com,shortto.com,블로그 단축 URL 목록,2026-10-16
+vzturl.com,vzturl.com,블로그 단축 URL 목록,2026-10-16
+u.bb,u.bb,블로그 단축 URL 목록,2026-10-16
+shorturl.at,shorturl.at,블로그 단축 URL 목록,2026-10-16
+han.gl,han.gl,블로그 단축 URL 목록,2026-10-16
+wo.gl,wo.gl,블로그 단축 URL 목록,2026-10-16
+wa.gl,wa.gl,블로그 단축 URL 목록,2026-10-16
+url.kr,url.kr,(확인 필요),2026-10-16
