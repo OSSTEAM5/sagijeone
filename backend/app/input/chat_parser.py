@@ -18,14 +18,17 @@ def parse_prefixed(text: str) -> list[Message] | None:
         m = re.match(r"^\s*(판매자|구매자)\s*[:：]\s*(.+)$", line)
         if not m:
             return None
-        messages.append({"speaker": SPEAKER_MAP[m.group(1)], "text": m.group(2).strip()})
+        messages.append({"index": len(messages),
+                         "speaker": SPEAKER_MAP[m.group(1)],
+                         "text": m.group(2).strip()})
     return messages or None
 
 
 def parse_plain(text: str) -> list[Message]:
     """화자 정보가 없는 텍스트 — 항상 성공하는 마지막 파서"""
-    return [{"speaker": "unknown", "text": line.strip()}
-            for line in text.splitlines() if line.strip()]
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    return [{"index": i, "speaker": "unknown", "text": line}
+            for i, line in enumerate(lines)]
 
 
 # [수업 적용] 2·3강 First-Class Function — 파서 함수를 리스트로 관리하고 순서대로 시도
