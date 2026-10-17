@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>사기전에 🔍 - 중고거래 위험 신호 분석기</title>
+  <!-- Noto Sans KR 웹 폰트 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --bg-page: #f8fafc;
+      --bg-card: #ffffff;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      
+      /* 등급별 색상 토큰 */
+      --color-safe: #10b981;
+      --color-safe-bg: #ecfdf5;
+      --color-safe-border: #a7f3d0;
+      --color-safe-text: #065f46;
+
+      --color-warning: #f59e0b;
+      --color-warning-bg: #fffbeb;
+      --color-warning-border: #fde68a;
+      --color-warning-text: #92400e;
+
+      --color-danger: #ef4444;
+      --color-danger-bg: #fef2f2;
+      --color-danger-border: #fecaca;
+      --color-danger-text: #991b1b;
+
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 32px 16px 80px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* 헤더 */
+    .header {
+      text-align: center;
+      padding: 8px 0;
+    }
+
+    .header-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+
+    .header-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* 카드 베이스 */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* 테스트용 프리셋 컨트롤러 (옵션 기능) */
+    .preset-controller {
+      background: #f1f5f9;
+      border: 1px dashed #cbd5e1;
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .preset-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      color: #475569;
+      font-weight: 600;
+    }
+
+    .preset-tag {
+      background: #e2e8f0;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+    }
+
+    .preset-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .preset-btn {
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-main);
+      transition: all 0.15s ease;
+      text-align: center;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .preset-btn.active {
+      background: #0f172a;
+      color: #ffffff;
+      border-color: #0f172a;
+    }
+
+    /* 입력 폼 */
+    .input-section {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .input-label {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .sample-fill-link {
+      font-size: 0.8rem;
+      color: var(--primary);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    .sample-fill-link:hover {
+      color: var(--primary-hover);
+    }
+
+    .chat-textarea {
+      width: 100%;
+      height: 180px;
+      padding: 16px;
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      background-color: #fafbfc;
+    }
+
+    .chat-textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+      background-color: #ffffff;
+    }
+
+    .btn-analyze {
+      width: 100%;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+      transition: all 0.2s ease;
+    }
+
+    .btn-analyze:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+    }
+
+    .btn-analyze:active {
+      transform: translateY(0);
+    }
+
+    /* 결과 영역 */
+    .result-section {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeIn 0.3s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* 등급 상단 카드 */
+    .level-summary-card {
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-width: 1.5px;
+      border-style: solid;
+      transition: all 0.3s ease;
+    }
+
+    .level-info-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .level-icon-wrapper {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+    }
+
+    .level-text-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .level-badge-name {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+
+    .level-sub-desc {
+      font-size: 0.88rem;
+      opacity: 0.9;
+    }
+
+    .score-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      backdrop-filter: blur(4px);
+    }
+
+    .score-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .score-value {
+      font-size: 1.4rem;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+
+    /* 등급별 테마 클래스 */
+    /* 1. 특이 신호 없음 (Safe) */
+    .status-safe {
+      background-color: var(--color-safe-bg);
+      border-color: var(--color-safe-border);
+      color: var(--color-safe-text);
+    }
+    .status-safe .level-icon-wrapper {
+      background: #d1fae5;
+    }
+    .status-safe .score-value {
+      color: var(--color-safe);
+    }
+
+    /* 2. 주의 (Warning) */
+    .status-warning {
+      background-color: var(--color-warning-bg);
+      border-color: var(--color-warning-border);
+      color: var(--color-warning-text);
+    }
+    .status-warning .level-icon-wrapper {
+      background: #fef3c7;
+    }
+    .status-warning .score-value {
+      color: var(--color-warning);
+    }
+
+    /* 3. 여러 위험 신호 (Danger) */
+    .status-danger {
+      background-color: var(--color-danger-bg);
+      border-color: var(--color-danger-border);
+      color: var(--color-danger-text);
+    }
+    .status-danger .level-icon-wrapper {
+      background: #fee2e2;
+    }
+    .status-danger .score-value {
+      color: var(--color-danger);
+    }
+
+    /* 섹션 공통 타이틀 */
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    /* 신호 카드 목록 */
+    .signals-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .signal-card {
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      background: #ffffff;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      border-left: 4px solid #f59e0b; /* default warning */
+    }
+
+    .signal-card.danger-edge {
+      border-left-color: #ef4444;
+    }
+
+    .signal-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .signal-title {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .signal-weight-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: #f1f5f9;
+      color: #475569;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .signal-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 0.88rem;
+    }
+
+    .signal-tag {
+      flex-shrink: 0;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .tag-evidence {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 1px solid #fee2e2;
+    }
+
+    .tag-advice {
+      background: #eff6ff;
+      color: #2563eb;
+      border: 1px solid #dbeafe;
+    }
+
+    .evidence-text {
+      color: #334155;
+      background: #f8fafc;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      width: 100%;
+      border-left: 2px solid #cbd5e1;
+      font-style: italic;
+    }
+
+    .advice-text {
+      color: #1e293b;
+      font-weight: 500;
+    }
+
+    /* 신호 없음(안전) 상태 표시 */
+    .no-signals-box {
+      text-align: center;
+      padding: 28px 16px;
+      background: #f8fafc;
+      border: 1px dashed var(--border-color);
+      border-radius: var(--radius-md);
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    /* 권장 행동 리스트 */
+    .advice-section {
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+    }
+
+    .advice-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .advice-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.92rem;
+      color: var(--text-main);
+    }
+
+    .advice-check-icon {
+      color: #10b981;
+      flex-shrink: 0;
+      margin-top: 2px;
+      font-weight: 800;
+    }
+
+    /* 안내 문구 (항상 노출되는 영역) */
+    .notice-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: #64748b;
+      line-height: 1.5;
+    }
+
+    .notice-icon {
+      font-size: 1.1rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    /* 모바일 대응 */
+    @media (max-width: 600px) {
+      body {
+        padding: 20px 12px 60px;
+      }
+      .preset-buttons {
+        grid-template-columns: 1fr;
+      }
+      .level-summary-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+      }
+      .score-badge {
+        align-items: flex-start;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- 1. 헤더 -->
+    <header class="header">
+      <h1 class="header-logo">사기전에 🔍</h1>
+      <p class="header-desc">중고거래 대화 내용을 붙여넣으면 위험 신호와 근거를 분석해 드립니다.</p>
+    </header>
+
+    <!-- [테스트용 프리셋 스위처] 개발/시연 편의 기능 -->
+    <div class="preset-controller">
+      <div class="preset-header">
+        <span>🧪 가짜 데이터(Mock) 테스트 프리셋</span>
+        <span class="preset-tag">Frontend 데모 모드</span>
+      </div>
+      <div class="preset-buttons">
+        <button type="button" class="preset-btn" onclick="applyPreset('safe', this)">
+          🟢 특이 신호 없음
+        </button>
+        <button type="button" class="preset-btn active" onclick="applyPreset('caution', this)">
+          🟡 주의 (기본)
+        </button>
+        <button type="button" class="preset-btn" onclick="applyPreset('danger', this)">
+          🔴 여러 위험 신호
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. 입력 영역 -->
+    <section class="card input-section">
+      <div class="label-row">
+        <label for="chatInput" class="input-label">대화 내용 붙여넣기</label>
+        <span class="sample-fill-link" onclick="fillCurrentSample()">샘플 대화 채우기</span>
+      </div>
+
+      <textarea 
+        id="chatInput" 
+        class="chat-textarea" 
+        placeholder="중고거래 채팅이나 판매글 내용을 여기에 붙여넣어 주세요.&#10;예: '안전결제는 수수료 때문에 안 해요. 계좌로 바로 입금 부탁드려요.'"
+      ></textarea>
+
+      <button type="button" id="analyzeBtn" class="btn-analyze" onclick="handleAnalyze()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <span>분석하기</span>
+      </button>
+    </section>
+
+    <!-- 3. 결과 영역 -->
+    <section id="resultSection" class="result-section">
+
+      <!-- 종합 등급 카드 -->
+      <div id="levelCard" class="level-summary-card status-warning">
+        <div class="level-info-left">
+          <div id="levelIcon" class="level-icon-wrapper">⚠️</div>
+          <div class="level-text-wrap">
+            <span class="level-badge-name" id="levelName">주의</span>
+            <span class="level-sub-desc" id="levelDescription">주의가 필요한 거래 신호가 감지되었습니다.</span>
+          </div>
+        </div>
+        <div class="score-badge">
+          <span class="score-title">위험도 점수</span>
+          <span class="score-value" id="scoreValue">2점</span>
+        </div>
+      </div>
+
+      <!-- 발견된 위험 신호 목록 -->
+      <div class="card">
+        <h2 class="section-title">
+          <span>🚩 발견된 위험 신호</span>
+          <span id="signalCountBadge" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">(1건)</span>
+        </h2>
+        
+        <div id="signalsContainer" class="signals-list">
+          <!-- JS 동적 생성 -->
+        </div>
+      </div>
+
+      <!-- 권장 행동 -->
+      <div class="advice-section">
+        <h2 class="section-title">💡 권장 행동</h2>
+        <ul id="adviceList" class="advice-list">
+          <!-- JS 동적 생성 -->
+        </ul>
+      </div>
+
+      <!-- 안내 문구 (항상 결과 맨 아래에 표시) -->
+      <div class="notice-card">
+        <span class="notice-icon">ℹ️</span>
+        <p id="noticeText">이 결과는 위험 신호를 알려드릴 뿐, 판매자가 사기꾼이라는 뜻은 아닙니다.</p>
+      </div>
+
+    </section>
+
+  </div>
+
+  <script>
+    /**
+     * 1. 가짜 데이터 (Mock Data) 정의
+     * 추후 백엔드 API 연결 시 이 데이터 포맷을 응답받아 렌더링하게 됩니다.
+     */
+    const MOCK_PRESETS = {
+      // 1) 주의 (요구사항 기본 예시)
+      caution: {
+        level: "주의",
+        score: 2,
+        signals: [
+          {
+            signal: "안전결제 거부",
+            evidence: "안전결제는 안 해요",
+            weight: 2,
+            advice: "플랫폼 안전결제를 요청하세요."
+          }
+        ],
+        advice: [
+          "플랫폼 안전결제를 요청하세요."
+        ],
+        notice: "이 결과는 위험 신호를 알려드릴 뿐, 판매자가 사기꾼이라는 뜻은 아닙니다.",
+        sampleText: "구매자: 안전결제로 거래 가능할까요?\n판매자: 죄송하지만 안전결제는 안 해요. 직거래나 계좌입금만 받습니다."
+      },
+
+      // 2) 여러 위험 신호
+      danger: {
+        level: "여러 위험 신호",
+        score: 6,
+        signals: [
+          {
+            signal: "안전결제 거부",
+            evidence: "수수료 때문에 안전거래는 절대 안 합니다",
+            weight: 2,
+            advice: "플랫폼 안전결제를 요청하세요."
+          },
+          {
+            signal: "외부 메신저 이동 유도",
+            evidence: "여기는 알림이 잘 안 오니 카톡 아이디 safe999로 톡주세요",
+            weight: 2,
+            advice: "플랫폼 밖 개인 메신저 거래를 중단하세요."
+          },
+          {
+            signal: "서두르는 입금 요구",
+            evidence: "지금 30분 내로 즉시 입금하시면 택배비 빼드릴게요",
+            weight: 2,
+            advice: "입금 전 계좌번호와 전화번호 사기 이력을 조회하세요."
+          }
+        ],
+        advice: [
+          "플랫폼 안전결제를 요청하세요.",
+          "플랫폼 밖 개인 메신저 거래를 중단하세요.",
+          "더치트 또는 사이버캅에서 상대방 계좌번호와 연락처를 조회하세요."
+        ],
+        notice: "이 결과는 위험 신호를 알려드릴 뿐, 판매자가 사기꾼이라는 뜻은 아닙니다.",
+        sampleText: "구매자: 구매 희망합니다. 번개페이로 되나요?\n판매자: 수수료 때문에 안전거래는 절대 안 합니다.\n판매자: 여기는 알림이 잘 안 오니 카톡 아이디 safe999로 톡주세요.\n판매자: 지금 30분 내로 즉시 입금하시면 택배비 빼드릴게요."
+      },
+
+      // 3) 특이 신호 없음
+      safe: {
+        level: "특이 신호 없음",
+        score: 0,
+        signals: [],
+        advice: [
+          "일반적인 중고거래 절차에 따라 진행하셔도 좋습니다.",
+          "직거래 시에는 사람이 많고 밝은 공공장소를 선택하세요."
+        ],
+        notice: "이 결과는 위험 신호를 알려드릴 뿐, 판매자가 사기꾼이라는 뜻은 아닙니다.",
+        sampleText: "구매자: 안녕하세요, 아직 판매 중이신가요?\n판매자: 네, 구매 가능합니다! 안전결제 창 열어드릴까요, 아니면 강남역 직거래 원하시나요?"
+      }
+    };
+
+    // 현재 활성화된 가짜 데이터 (기본값: '주의')
+    let currentMock = MOCK_PRESETS.caution;
+
+    /**
+     * 프리셋 전환 함수 (테스트 편의 기능)
+     */
+    function applyPreset(key, btnElement) {
+      currentMock = MOCK_PRESETS[key];
+      
+      // 프리셋 버튼 활성화 UI 변경
+      document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
+      if (btnElement) {
+        btnElement.classList.add('active');
+      }
+
+      // 샘플 텍스트 자동 채우기
+      const chatInput = document.getElementById('chatInput');
+      chatInput.value = currentMock.sampleText;
+
+      // 결과 화면이 이미 열려있다면 즉시 재렌더링
+      const resultSection = document.getElementById('resultSection');
+      if (resultSection.style.display === 'flex') {
+        renderResult(currentMock);
+      }
+    }
+
+    /**
+     * 샘플 대화 채우기 링크 클릭 시
+     */
+    function fillCurrentSample() {
+      const chatInput = document.getElementById('chatInput');
+      chatInput.value = currentMock.sampleText;
+      chatInput.focus();
+    }
+
+    /**
+     * "분석하기" 버튼 클릭 핸들러
+     */
+    function handleAnalyze() {
+      const chatInput = document.getElementById('chatInput');
+      
+      // 입력값이 비어있을 경우 기본 샘플을 채워줌
+      if (!chatInput.value.trim()) {
+        chatInput.value = currentMock.sampleText;
+      }
+
+      // 화면에 결과 렌더링
+      renderResult(currentMock);
+
+      // 결과 영역으로 부드럽게 스크롤 이동
+      const resultSection = document.getElementById('resultSection');
+      resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    /**
+     * 결과 데이터를 읽어서 결과 영역에 렌더링하는 함수
+     * @param {Object} result - 분석 결과 JSON 객체
+     */
+    function renderResult(result) {
+      const resultSection = document.getElementById('resultSection');
+      const levelCard = document.getElementById('levelCard');
+      const levelIcon = document.getElementById('levelIcon');
+      const levelName = document.getElementById('levelName');
+      const levelDescription = document.getElementById('levelDescription');
+      const scoreValue = document.getElementById('scoreValue');
+      const signalCountBadge = document.getElementById('signalCountBadge');
+      const signalsContainer = document.getElementById('signalsContainer');
+      const adviceList = document.getElementById('adviceList');
+      const noticeText = document.getElementById('noticeText');
+
+      // 1. 등급에 따른 클래스 및 텍스트/아이콘 설정
+      levelCard.classList.remove('status-safe', 'status-warning', 'status-danger');
+
+      if (result.level === "특이 신호 없음") {
+        levelCard.classList.add('status-safe');
+        levelIcon.textContent = "🛡️";
+        levelDescription.textContent = "거래 대화에서 특별한 위험 신호가 감지되지 않았습니다.";
+      } else if (result.level === "주의") {
+        levelCard.classList.add('status-warning');
+        levelIcon.textContent = "⚠️";
+        levelDescription.textContent = "주의가 필요한 거래 패턴이 일부 감지되었습니다.";
+      } else if (result.level === "여러 위험 신호") {
+        levelCard.classList.add('status-danger');
+        levelIcon.textContent = "🚨";
+        levelDescription.textContent = "다수의 사기 의심 위험 신호가 함께 발견되었습니다. 거래에 각별히 유의하세요!";
+      } else {
+        // 기타/미정의 등급 대비
+        levelCard.classList.add('status-warning');
+        levelIcon.textContent = "⚠️";
+        levelDescription.textContent = "거래 신호를 확인해 주세요.";
+      }
+
+      levelName.textContent = result.level;
+      scoreValue.textContent = `${result.score}점`;
+
+      // 2. 위험 신호 카드들 렌더링
+      signalsContainer.innerHTML = '';
+      const signalCount = (result.signals && result.signals.length) || 0;
+      signalCountBadge.textContent = `(${signalCount}건)`;
+
+      if (signalCount === 0) {
+        signalsContainer.innerHTML = `
+          <div class="no-signals-box">
+            발견된 위험 신호가 없습니다. 편안한 거래 되세요!
+          </div>
+        `;
+      } else {
+        result.signals.forEach(sig => {
+          const card = document.createElement('div');
+          const isDangerLevel = result.level === "여러 위험 신호";
+          card.className = `signal-card ${isDangerLevel ? 'danger-edge' : ''}`;
+
+          card.innerHTML = `
+            <div class="signal-card-header">
+              <span class="signal-title">${escapeHtml(sig.signal)}</span>
+              <span class="signal-weight-badge">위험 가중치 +${sig.weight}</span>
+            </div>
+            <div class="signal-row">
+              <span class="signal-tag tag-evidence">근거 문장</span>
+              <div class="evidence-text">"${escapeHtml(sig.evidence)}"</div>
+            </div>
+            <div class="signal-row">
+              <span class="signal-tag tag-advice">권장 조치</span>
+              <div class="advice-text">${escapeHtml(sig.advice)}</div>
+            </div>
+          `;
+          signalsContainer.appendChild(card);
+        });
+      }
+
+      // 3. 종합 권장 행동 목록 (advice)
+      adviceList.innerHTML = '';
+      if (result.advice && result.advice.length > 0) {
+        result.advice.forEach(item => {
+          const li = document.createElement('li');
+          li.className = 'advice-item';
+          li.innerHTML = `
+            <span class="advice-check-icon">✓</span>
+            <span>${escapeHtml(item)}</span>
+          `;
+          adviceList.appendChild(li);
+        });
+      }
+
+      // 4. 안내 문구 (notice는 항상 보임)
+      noticeText.textContent = result.notice || "이 결과는 위험 신호를 알려드릴 뿐, 판매자가 사기꾼이라는 뜻은 아닙니다.";
+
+      // 결과 섹션 표시
+      resultSection.style.display = 'flex';
+    }
+
+    /**
+     * XSS 방지를 위한 HTML 이스케이프 유틸
+     */
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // 초기 화면 로드 시 기본 샘플 대화 채워두기
+    window.addEventListener('DOMContentLoaded', () => {
+      fillCurrentSample();
+    });
+  </script>
+</body>
+</html>
