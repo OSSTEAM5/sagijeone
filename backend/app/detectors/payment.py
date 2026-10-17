@@ -32,4 +32,29 @@ def detect_safe_payment_refusal(messages: list[Message]) -> list[Signal]:
 
 
 # TODO(2번): detect_payment_pressure (빠른 입금 요구)
+
+PRESSURE_PATTERNS = ["오늘 입금", "오늘안에 입금", "빨리 입금", "선입금", "먼저 입금"]
+
+# [수업 적용] 4강 Decorator — @detector로 탐지기 자동 등록
+@detector
+def detect_payment_pressure(messages: list[Message]) -> list[Signal]:
+    """판매자가 입금을 재촉하는 표현"""
+    signals = []
+    for i, m in enumerate(messages):
+        if m["speaker"] == "buyer":     # 구매자 발언은 검사하지 않음
+            continue
+        for p in PRESSURE_PATTERNS:
+            if p in m["text"]:
+                signals.append({
+                    "code": "PAYMENT_PRESSURE",
+                    "signal": "빠른 입금 요구",
+                    "message_index": m.get("index", i),
+                    "match": p,
+                    "evidence": m["text"],
+                    "weight": 2,
+                    "advice": "입금을 서두르지 마세요. 물건과 판매자 정보를 먼저 확인하세요.",
+                })
+                break   # 한 문장에서 같은 신호는 한 번만
+    return signals
+    
 # TODO(2번): detect_bank_transfer_only (계좌이체만 요구)
