@@ -8,9 +8,13 @@ NOTICE = "이 결과는 위험 신호를 알려드릴 뿐, 판매자가 사기�
 
 
 def build_result(signals: list[Signal]) -> dict:
-    score = sum(s["weight"] for s in signals)
-    kinds = {s["signal"] for s in signals}
-
+    best = {}
+    for s in signals:
+        best[s["signal"]] = max(best.get(s["signal"], 0), s["weight"])
+        
+    score = sum(best.values())
+    kinds = set(best)
+        
     if not signals:
         level = "특이 신호 없음"
     elif len(kinds) >= 2 or score >= 4:   # 서로 다른 신호가 함께 나타나면 상향 (복합 신호)
