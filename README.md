@@ -76,11 +76,11 @@ docs/       # 회의록 외 문서, 설계 자료
 | 이름 | 역할 | GitHub |
 |---|---|---|
 |정윤재 | 팀장/URL/사기 이력 |https://github.com/jangjaebi |
-|박태민 |OCR / 입력처리 | |
-|이주형 |FRONTEND / UX | |
-|박승배 |위험 신호 탐지 | |
-|신재원 |문맥 처리 / 품질 | |
-|장세은 |BACKEND / 배포 | |
+|박태민 |OCR / 입력처리 |https://github.com/ParkTaeMin2663 |
+|이주형 |FRONTEND / UX |https://github.com/matsgu4329 |
+|박승배 |위험 신호 탐지 |https://github.com/hbParksb |
+|신재원 |문맥 처리 / 품질 |https://github.com/jaewonshin-20242062 |
+|장세은 |BACKEND / 배포 |https://github.com/jjangse15 |
 
 
 ## 협업 방법
