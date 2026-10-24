@@ -3,7 +3,9 @@
 실행: (backend 폴더에서) uvicorn app.main:app --reload
 확인: http://127.0.0.1:8000/docs
 """
+from pathlib import Path
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.models import AnalyzeRequest, AnalyzeResponse
@@ -23,3 +25,6 @@ def health():
 @app.post("/analyze", response_model=AnalyzeResponse)
 def analyze_endpoint(req: AnalyzeRequest):
     return analyze(req.text)
+
+FRONTEND_DIR = Path(__file__).resolve().parents[2]/"frontend"
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
