@@ -3,5 +3,5 @@
 
 새 탐지기 파일을 만들면 아래에 import 한 줄만 추가하세요.
 """
-from app.detectors import payment, url  # noqa: F401
+from app.detectors import messenger, payment, url  # noqa: F401
 from app.detectors.registry import detectors  # noqa: F401
