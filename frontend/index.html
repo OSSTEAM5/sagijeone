@@ -233,6 +233,34 @@
       transform: translateY(0);
     }
 
+    .btn-analyze:disabled {
+      cursor: not-allowed;
+      opacity: 0.75;
+    }
+
+    /* 에러 알림 배너 */
+    .error-banner {
+      background-color: var(--color-danger-bg);
+      border: 1px solid var(--color-danger-border);
+      color: var(--color-danger-text);
+      padding: 12px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.92rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     /* 결과 영역 */
     .result-section {
       display: none;
@@ -548,21 +576,21 @@
       <p class="header-desc">중고거래 대화 내용을 붙여넣으면 위험 신호와 근거를 분석해 드립니다.</p>
     </header>
 
-    <!-- [테스트용 프리셋 스위처] 개발/시연 편의 기능 -->
+    <!-- 예시 대화 불러오기 (프리셋) -->
     <div class="preset-controller">
       <div class="preset-header">
-        <span>🧪 가짜 데이터(Mock) 테스트 프리셋</span>
-        <span class="preset-tag">Frontend 데모 모드</span>
+        <span>💡 예시 대화 불러오기</span>
+        <span class="preset-tag">클릭 시 자동 입력</span>
       </div>
       <div class="preset-buttons">
         <button type="button" class="preset-btn" onclick="applyPreset('safe', this)">
-          🟢 특이 신호 없음
+          🟢 정상 거래 예시
         </button>
         <button type="button" class="preset-btn active" onclick="applyPreset('caution', this)">
-          🟡 주의 (기본)
+          🟡 주의 예시 (기본)
         </button>
         <button type="button" class="preset-btn" onclick="applyPreset('danger', this)">
-          🔴 여러 위험 신호
+          🔴 여러 위험 신호 예시
         </button>
       </div>
     </div>
@@ -580,7 +608,13 @@
         placeholder="중고거래 채팅이나 판매글 내용을 여기에 붙여넣어 주세요.&#10;예: '안전결제는 수수료 때문에 안 해요. 계좌로 바로 입금 부탁드려요.'"
       ></textarea>
 
-      <button type="button" id="analyzeBtn" class="btn-analyze" onclick="handleAnalyze()">
+      <!-- 서버 오류 발생 시 안내 배너 -->
+      <div id="errorBanner" class="error-banner" style="display: none;">
+        <span>⚠️</span>
+        <span id="errorMsgText">분석에 실패했어요. 잠시 후 다시 시도해 주세요.</span>
+      </div>
+
+      <button type="button" id="analyzeBtn" class="btn-analyze">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -598,12 +632,12 @@
           <div id="levelIcon" class="level-icon-wrapper">⚠️</div>
           <div class="level-text-wrap">
             <span class="level-badge-name" id="levelName">주의</span>
-            <span class="level-sub-desc" id="levelDescription">주의가 필요한 거래 신호가 감지되었습니다.</span>
+            <span class="level-sub-desc" id="levelDescription">주의가 필요한 거래 패턴이 일부 감지되었습니다.</span>
           </div>
         </div>
         <div class="score-badge">
-          <span class="score-title">위험도 점수</span>
-          <span class="score-value" id="scoreValue">2점</span>
+          <span class="score-title">위험 신호 점수</span>
+          <span class="score-value" id="scoreValue">0점</span>
         </div>
       </div>
 
@@ -639,100 +673,42 @@
 
   <script>
     /**
-     * 1. 가짜 데이터 (Mock Data) 정의
-     * 추후 백엔드 API 연결 시 이 데이터 포맷을 응답받아 렌더링하게 됩니다.
+     * 예시 대화 샘플 정의 (서버 실제 판정 테스트용)
+     * 프리셋 버튼 클릭 시 입력창에 대화 내용만 채워집니다.
      */
-    const MOCK_PRESETS = {
-      // 1) 주의 (요구사항 기본 예시)
-      caution: {
-        level: "주의",
-        score: 2,
-        signals: [
-          {
-            signal: "안전결제 거부",
-            evidence: "안전결제는 안 해요",
-            weight: 2,
-            advice: "플랫폼 안전결제를 요청하세요."
-          }
-        ],
-        advice: [
-          "플랫폼 안전결제를 요청하세요."
-        ],
-        notice: "이 결과는 위험 신호를 알려드릴 뿐, 판매자가 사기꾼이라는 뜻은 아닙니다.",
-        sampleText: "구매자: 안전결제로 거래 가능할까요?\n판매자: 죄송하지만 안전결제는 안 해요. 직거래나 계좌입금만 받습니다."
-      },
+    const PRESET_SAMPLES = {
+      // 1) 주의 예시 (안전결제 거부)
+      caution: "구매자: 안전결제로 거래 가능할까요?\n판매자: 죄송하지만 안전결제는 안 해요. 직거래나 계좌입금만 받습니다.",
 
-      // 2) 여러 위험 신호
-      danger: {
-        level: "여러 위험 신호",
-        score: 6,
-        signals: [
-          {
-            signal: "안전결제 거부",
-            evidence: "수수료 때문에 안전거래는 절대 안 합니다",
-            weight: 2,
-            advice: "플랫폼 안전결제를 요청하세요."
-          },
-          {
-            signal: "외부 메신저 이동 유도",
-            evidence: "여기는 알림이 잘 안 오니 카톡 아이디 safe999로 톡주세요",
-            weight: 2,
-            advice: "플랫폼 밖 개인 메신저 거래를 중단하세요."
-          },
-          {
-            signal: "서두르는 입금 요구",
-            evidence: "지금 30분 내로 즉시 입금하시면 택배비 빼드릴게요",
-            weight: 2,
-            advice: "입금 전 계좌번호와 전화번호 사기 이력을 조회하세요."
-          }
-        ],
-        advice: [
-          "플랫폼 안전결제를 요청하세요.",
-          "플랫폼 밖 개인 메신저 거래를 중단하세요.",
-          "더치트 또는 사이버캅에서 상대방 계좌번호와 연락처를 조회하세요."
-        ],
-        notice: "이 결과는 위험 신호를 알려드릴 뿐, 판매자가 사기꾼이라는 뜻은 아닙니다.",
-        sampleText: "구매자: 구매 희망합니다. 번개페이로 되나요?\n판매자: 수수료 때문에 안전거래는 절대 안 합니다.\n판매자: 여기는 알림이 잘 안 오니 카톡 아이디 safe999로 톡주세요.\n판매자: 지금 30분 내로 즉시 입금하시면 택배비 빼드릴게요."
-      },
+      // 2) 여러 위험 신호 예시 (안전결제 거부 + 빠른 입금 요구)
+      danger: "구매자: 혹시 번개페이 안전결제 되나요?\n판매자: 안전결제는 안 해요. 오늘안에 입금 해주세요.",
 
-      // 3) 특이 신호 없음
-      safe: {
-        level: "특이 신호 없음",
-        score: 0,
-        signals: [],
-        advice: [
-          "일반적인 중고거래 절차에 따라 진행하셔도 좋습니다.",
-          "직거래 시에는 사람이 많고 밝은 공공장소를 선택하세요."
-        ],
-        notice: "이 결과는 위험 신호를 알려드릴 뿐, 판매자가 사기꾼이라는 뜻은 아닙니다.",
-        sampleText: "구매자: 안녕하세요, 아직 판매 중이신가요?\n판매자: 네, 구매 가능합니다! 안전결제 창 열어드릴까요, 아니면 강남역 직거래 원하시나요?"
-      }
+      // 3) 특이 신호 없음 예시 (정상 거래 대화)
+      safe: "구매자: 혹시 안전결제로 구매할 수 있을까요?\n판매자: 네 안전결제도 가능해요. 원하시는 방식으로 진행해 드릴게요."
     };
 
-    // 현재 활성화된 가짜 데이터 (기본값: '주의')
-    let currentMock = MOCK_PRESETS.caution;
+    // 현재 선택된 프리셋 키
+    let currentPresetKey = 'caution';
 
     /**
-     * 프리셋 전환 함수 (테스트 편의 기능)
+     * 프리셋 전환 함수: 입력창에 예시 대화만 채우도록 변경
      */
     function applyPreset(key, btnElement) {
-      currentMock = MOCK_PRESETS[key];
-      
+      currentPresetKey = key;
+
       // 프리셋 버튼 활성화 UI 변경
       document.querySelectorAll('.preset-btn').forEach(btn => btn.classList.remove('active'));
       if (btnElement) {
         btnElement.classList.add('active');
       }
 
-      // 샘플 텍스트 자동 채우기
+      // 입력창에 선택한 예시 텍스트 채우기
       const chatInput = document.getElementById('chatInput');
-      chatInput.value = currentMock.sampleText;
+      chatInput.value = PRESET_SAMPLES[key] || '';
+      chatInput.focus();
 
-      // 결과 화면이 이미 열려있다면 즉시 재렌더링
-      const resultSection = document.getElementById('resultSection');
-      if (resultSection.style.display === 'flex') {
-        renderResult(currentMock);
-      }
+      // 에러 안내 숨기기
+      hideError();
     }
 
     /**
@@ -740,32 +716,97 @@
      */
     function fillCurrentSample() {
       const chatInput = document.getElementById('chatInput');
-      chatInput.value = currentMock.sampleText;
+      chatInput.value = PRESET_SAMPLES[currentPresetKey] || PRESET_SAMPLES.caution;
       chatInput.focus();
+      hideError();
     }
 
     /**
-     * "분석하기" 버튼 클릭 핸들러
+     * 에러 안내 표시 유틸
      */
-    function handleAnalyze() {
+    function showError(message) {
+      const errorBanner = document.getElementById('errorBanner');
+      const errorMsgText = document.getElementById('errorMsgText');
+      if (errorBanner && errorMsgText) {
+        errorMsgText.textContent = message;
+        errorBanner.style.display = 'flex';
+        errorBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      } else {
+        alert(message);
+      }
+    }
+
+    /**
+     * 에러 안내 숨김 유틸
+     */
+    function hideError() {
+      const errorBanner = document.getElementById('errorBanner');
+      if (errorBanner) {
+        errorBanner.style.display = 'none';
+      }
+    }
+
+    /**
+     * [수업 적용] 비동기 통신 — async/await 및 Fetch API를 활용하여 실제 백엔드(/analyze) 호출
+     */
+    async function handleAnalyze() {
       const chatInput = document.getElementById('chatInput');
-      
-      // 입력값이 비어있을 경우 기본 샘플을 채워줌
-      if (!chatInput.value.trim()) {
-        chatInput.value = currentMock.sampleText;
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      const text = chatInput.value.trim();
+
+      hideError();
+
+      // 입력값이 비어있을 경우 경고 안내
+      if (!text) {
+        alert('분석할 대화 내용을 입력해 주세요.');
+        chatInput.focus();
+        return;
       }
 
-      // 화면에 결과 렌더링
-      renderResult(currentMock);
+      // 분석 진행 중 버튼 상태 변경 (로딩 피드백)
+      const originalBtnHTML = analyzeBtn.innerHTML;
+      analyzeBtn.disabled = true;
+      analyzeBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;">
+          <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10"></path>
+        </svg>
+        <span>분석 중...</span>
+      `;
 
-      // 결과 영역으로 부드럽게 스크롤 이동
-      const resultSection = document.getElementById('resultSection');
-      resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      try {
+        // 실제 백엔드 API에 POST 요청
+        const res = await fetch("/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text })
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP Error: ${res.status}`);
+        }
+
+        const result = await res.json(); // { level, score, signals, advice, notice }
+
+        // 서버가 반환한 실제 분석 결과로 화면 렌더링
+        renderResult(result);
+
+        // 결과 영역으로 부드럽게 스크롤 이동
+        const resultSection = document.getElementById('resultSection');
+        resultSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (error) {
+        console.error("분석 실패:", error);
+        // 서버 오류 시 사용자 안내
+        showError("분석에 실패했어요. 서버 연결 상태를 확인하고 다시 시도해 주세요.");
+      } finally {
+        analyzeBtn.disabled = false;
+        analyzeBtn.innerHTML = originalBtnHTML;
+      }
     }
 
     /**
-     * 결과 데이터를 읽어서 결과 영역에 렌더링하는 함수
-     * @param {Object} result - 분석 결과 JSON 객체
+     * 서버에서 전달받은 분석 결과 JSON 데이터를 읽어 화면에 렌더링
+     * @param {Object} result - { level, score, signals, advice, notice }
      */
     function renderResult(result) {
       const resultSection = document.getElementById('resultSection');
@@ -779,7 +820,7 @@
       const adviceList = document.getElementById('adviceList');
       const noticeText = document.getElementById('noticeText');
 
-      // 1. 등급에 따른 클래스 및 텍스트/아이콘 설정
+      // 1. 등급에 따른 클래스 및 안내 문구/아이콘 설정 (원칙: 판매자를 사기꾼으로 단정하지 않음)
       levelCard.classList.remove('status-safe', 'status-warning', 'status-danger');
 
       if (result.level === "특이 신호 없음") {
@@ -793,9 +834,8 @@
       } else if (result.level === "여러 위험 신호") {
         levelCard.classList.add('status-danger');
         levelIcon.textContent = "🚨";
-        levelDescription.textContent = "다수의 사기 의심 위험 신호가 함께 발견되었습니다. 거래에 각별히 유의하세요!";
+        levelDescription.textContent = "여러 위험 신호가 함께 발견되었어요. 거래 전에 꼭 확인하세요.";
       } else {
-        // 기타/미정의 등급 대비
         levelCard.classList.add('status-warning');
         levelIcon.textContent = "⚠️";
         levelDescription.textContent = "거래 신호를 확인해 주세요.";
@@ -804,7 +844,7 @@
       levelName.textContent = result.level;
       scoreValue.textContent = `${result.score}점`;
 
-      // 2. 위험 신호 카드들 렌더링
+      // 2. 위험 신호 카드 목록 렌더링
       signalsContainer.innerHTML = '';
       const signalCount = (result.signals && result.signals.length) || 0;
       signalCountBadge.textContent = `(${signalCount}건)`;
@@ -816,6 +856,7 @@
           </div>
         `;
       } else {
+        // [수업 적용] 2강 고차 함수(Higher-Order Function) — forEach를 활용한 신호 목록 순회 및 카드 생성
         result.signals.forEach(sig => {
           const card = document.createElement('div');
           const isDangerLevel = result.level === "여러 위험 신호";
@@ -839,7 +880,7 @@
         });
       }
 
-      // 3. 종합 권장 행동 목록 (advice)
+      // 3. 종합 권장 행동 목록 (advice) 렌더링
       adviceList.innerHTML = '';
       if (result.advice && result.advice.length > 0) {
         result.advice.forEach(item => {
@@ -853,7 +894,7 @@
         });
       }
 
-      // 4. 안내 문구 (notice는 항상 보임)
+      // 4. 단정하지 않는다는 안내 문구 (notice는 항상 노출)
       noticeText.textContent = result.notice || "이 결과는 위험 신호를 알려드릴 뿐, 판매자가 사기꾼이라는 뜻은 아닙니다.";
 
       // 결과 섹션 표시
@@ -873,9 +914,16 @@
         .replace(/'/g, '&#039;');
     }
 
-    // 초기 화면 로드 시 기본 샘플 대화 채워두기
+    // [수업 적용] 1강 일급 객체(First-class Citizen)로서의 함수 — 함수를 값처럼 이벤트 리스너에 전달
     window.addEventListener('DOMContentLoaded', () => {
+      // 초기 화면 로드 시 기본 예시 대화(주의) 채워두기
       fillCurrentSample();
+
+      // "분석하기" 버튼에 클릭 이벤트 핸들러 함수 전달
+      const analyzeBtn = document.getElementById('analyzeBtn');
+      if (analyzeBtn) {
+        analyzeBtn.addEventListener('click', handleAnalyze);
+      }
     });
   </script>
 </body>
