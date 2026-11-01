@@ -13,7 +13,8 @@ def build_result(signals: list[Signal]) -> dict:
         best[s["signal"]] = max(best.get(s["signal"], 0), s["weight"])
         
     score = sum(best.values())
-    kinds = set(best)
+    # [수업 적용] 2강 Set 컴프리헨션
+    kinds = {k for k, w in best.items() if w >= 2}
         
     if not signals:
         level = "특이 신호 없음"
