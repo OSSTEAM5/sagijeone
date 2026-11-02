@@ -2,6 +2,8 @@
 
 예시로 1개만 들어 있습니다. 같은 형식으로 탐지기를 추가하면 자동으로 등록됩니다.
 """
+import re
+
 from app.detectors.registry import detector, from_seller  # noqa: F401
 from app.models import Message, Signal
 
@@ -31,9 +33,14 @@ def detect_safe_payment_refusal(messages: list[Message]) -> list[Signal]:
     return signals
 
 
-# TODO(2번): detect_payment_pressure (빠른 입금 요구)
-
-PRESSURE_PATTERNS = ["오늘 입금", "오늘안에 입금", "빨리 입금", "선입금", "먼저 입금"]
+# 띄어쓰기와 무관하게 잡히도록 정규식 사용 (\s* = 공백 0개 이상)
+PRESSURE_PATTERNS = [
+    r"오늘\s*입금",
+    r"오늘\s*안에\s*입금",
+    r"빨리\s*입금",
+    r"선\s*입금",
+    r"먼저\s*입금",
+]
 
 # [수업 적용] 4강 Decorator — @detector로 탐지기 자동 등록
 @detector
@@ -44,17 +51,42 @@ def detect_payment_pressure(messages: list[Message]) -> list[Signal]:
         if m["speaker"] == "buyer":     # 구매자 발언은 검사하지 않음
             continue
         for p in PRESSURE_PATTERNS:
-            if p in m["text"]:
+            found = re.search(p, m["text"])
+            if found:
                 signals.append({
                     "code": "PAYMENT_PRESSURE",
                     "signal": "빠른 입금 요구",
                     "message_index": m.get("index", i),
-                    "match": p,
+                    "match": found.group(),
                     "evidence": m["text"],
                     "weight": 2,
                     "advice": "입금을 서두르지 마세요. 물건과 판매자 정보를 먼저 확인하세요.",
                 })
                 break   # 한 문장에서 같은 신호는 한 번만
     return signals
-    
-# TODO(2번): detect_bank_transfer_only (계좌이체만 요구)
+
+
+BANK_TRANSFER_ONLY_PATTERNS = ["계좌로만", "계좌이체만", "이체로만", "현금으로만"]
+
+
+# [수업 적용] 4강 Decorator — @detector로 탐지기 자동 등록
+@detector
+def detect_bank_transfer_only(messages: list[Message]) -> list[Signal]:
+    """판매자가 계좌이체(현금)로만 거래하자고 고집하는 표현"""
+    signals = []
+    for i, m in enumerate(messages):
+        if m["speaker"] == "buyer":     # 구매자 발언은 검사하지 않음
+            continue
+        for p in BANK_TRANSFER_ONLY_PATTERNS:
+            if p in m["text"]:
+                signals.append({
+                    "code": "BANK_TRANSFER_ONLY",
+                    "signal": "계좌이체만 요구",
+                    "message_index": m.get("index", i),
+                    "match": p,
+                    "evidence": m["text"],
+                    "weight": 2,
+                    "advice": "계좌이체만 고집한다면 플랫폼 안전결제를 요청하세요.",
+                })
+                break   # 한 문장에서 같은 신호는 한 번만
+    return signals
