@@ -5,7 +5,7 @@
 중고거래 채팅·판매글·스크린샷·URL을 분석해서 **거래의 위험 신호를 근거와 함께 알려주는** 웹 서비스입니다.
 
 「오픈소스SW프로그래밍」 팀 프로젝트
-
+배포 주소 : https://sagijeone.onrender.com/
 ---
 
 ## 무엇을 하나요?
@@ -69,7 +69,12 @@ docs/       # 회의록 외 문서, 설계 자료
 
 ## 실행 방법
 
-> 개발이 시작되면 작성합니다.
+Docker 이미지 빌드 후 컨테이너 실행
+```bash
+docker build -t sagijeone .
+docker run -p 8000:8000 sagijeone
+```
+브라우저에서 http://localhost:8000 로 접속
 
 ## 팀
 
