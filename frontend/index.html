@@ -815,21 +815,24 @@
   </div>
 
   <script>
-    /**
+
+        /**
      * [시연 대화 프리셋]
-     * 3번(신재원 님) 확정 시연 대화 3개 (11/5 전달 예정)
-     * 현재 등록된 3개 대화는 백엔드 분석 결과 각각 정상 / 주의 / 여러 위험 신호 등급을 정확히 트리거합니다.
-     * 추후 3번의 확정 대화가 전달되면 아래 문자열만 교체하면 즉시 반영됩니다.
+     * 3번(신재원 님) 확정 시연 대화 3개 (Issue #44 / docs/demo_conversations.md)
+     * 1) safe: 정상 거래 대화 (아이패드) -> 판정: "특이 신호 없음" (0점)
+     * 2) caution: 주의 대화 (자전거, 빠른 입금 요구) -> 판정: "주의" (2점)
+     * 3) danger: 여러 위험 신호 대화 (갤럭시 버즈, 안전결제 거부 + 카톡 유도 + 유사 URL) -> 판정: "여러 위험 신호" (5점)
      */
-    const PRESET_SAMPLES = {
-      // 1) 특이 신호 없음 (정상 거래 대화) -> 판정: "특이 신호 없음"
-      safe: "구매자: 혹시 안전결제로 구매할 수 있을까요?\n판매자: 네 안전결제도 가능해요. 원하시는 방식으로 진행해 드릴게요.",
+        const PRESET_SAMPLES = {
+      // 1) 정상 대화 (오탐 방지 확인: 구매자의 "안전결제 되나요?" 질문을 신호로 잡지 않음)
+      safe: "구매자: 안녕하세요, 아이패드 아직 있나요?\n판매자: 네 있어요!\n구매자: 혹시 안전결제 되나요?\n판매자: 네 안전결제로 하셔도 돼요.\n구매자: 좋아요, 결제할게요.",
 
-      // 2) 주의 예시 (안전결제 거부) -> 판정: "주의"
-      caution: "구매자: 안전결제로 거래 가능할까요?\n판매자: 죄송하지만 안전결제는 안 해요. 직거래나 계좌입금만 받습니다.",
+      // 2) 주의 대화 (빠른 입금 요구: PAYMENT_PRESSURE)
+      caution: "구매자: 자전거 아직 판매 중이세요?\n판매자: 네, 문의가 많아서 오늘 입금하시는 분께 드릴게요.\n구매자: 직거래는 안 되나요?\n판매자: 거리가 멀어서 택배로만 가능해요.",
 
-      // 3) 여러 위험 신호 예시 (안전결제 거부 + 빠른 입금 요구) -> 판정: "여러 위험 신호"
-      danger: "구매자: 혹시 번개페이 안전결제 되나요?\n판매자: 안전결제는 안 해요. 오늘안에 입금 해주세요."
+      // 3) 여러 위험 신호 대화 (안전결제 거부 + 외부 메신저 유도 + 유사 URL)
+      danger: "구매자: 갤럭시 버즈 아직 있나요?\n판매자: 네 있어요. 안전결제는 안 해요, 수수료가 아까워서요.\n판매자: 여기 말고 카톡으로 얘기해요. 아이디 abc123 이에요.\n판매자: 결제는 이 링크로 해주세요 https://daangn-pay.com/order\n구매자: 아 네..."
+
     };
 
     // 현재 선택된 프리셋 키
@@ -869,7 +872,9 @@
     }
 
     /**
-     * 빈 입력 안내 표시
+
+     * 빈 입력 안내 표시 (alert 대신 인라인 경고)
+
      */
     function showEmptyInputError() {
       const chatInput = document.getElementById('chatInput');
@@ -947,13 +952,17 @@
       hideError();
       clearEmptyInputError();
 
-      // 1. 빈 입력이면 안내 문구 표시 (시연 중 브라우저 alert 모달 방지)
+
+      // 1. 빈 입력이면 안내 문구 표시 (시연 중 alert 팝업 대신 인라인 피드백)
+
       if (!text) {
         showEmptyInputError();
         return;
       }
 
-      // 2. 분석 진행 중 표시 (버튼 비활성화 + 텍스트창 및 프리셋 잠금 + "분석 중...")
+
+      // 2. 분석 진행 중 표시 (버튼 비활성화 + 입력창 및 프리셋 잠금 + "분석 중...")
+
       const originalBtnHTML = analyzeBtn.innerHTML;
       analyzeBtn.disabled = true;
       chatInput.readOnly = true;
@@ -968,7 +977,9 @@
         <span>분석 중...</span>
       `;
 
-      // 3. 서버가 잠들어 있어 느릴 때 안내 ("처음 분석은 시간이 걸릴 수 있어요" - 2.5초 후 표시)
+
+      // 3. 서버가 잠들어 있어 느릴 때 안내 ("처음 분석은 시간이 걸릴 수 있어요" - 2.5초 지연 시 노출)
+
       let slowServerTimer = setTimeout(() => {
         showSlowServerNotice();
       }, 2500);
@@ -998,11 +1009,13 @@
         // 서버 오류 시 사용자 안내
         showError("분석에 실패했어요. 서버 연결 상태를 확인하고 다시 시도해 주세요.");
       } finally {
-        // 서버 지연 타이머 정리 및 안내 숨김
+
+        // 서버 지연 타이머 해제 및 안내 숨김
         clearTimeout(slowServerTimer);
         hideSlowServerNotice();
 
-        // 버튼 및 입력 컨트롤 상태 복원
+        // 버튼 및 입력 컨트롤 원복
+
         analyzeBtn.disabled = false;
         analyzeBtn.innerHTML = originalBtnHTML;
         chatInput.readOnly = false;
@@ -1131,7 +1144,9 @@
         analyzeBtn.addEventListener('click', handleAnalyze);
       }
 
-      // 입력창 입력 시 빈 입력 에러 안내 자동 제거
+
+      // 입력창 타이핑 시 빈 입력 에러 안내 자동 제거
+
       const chatInput = document.getElementById('chatInput');
       if (chatInput) {
         chatInput.addEventListener('input', clearEmptyInputError);
