@@ -235,7 +235,88 @@
 
     .btn-analyze:disabled {
       cursor: not-allowed;
-      opacity: 0.75;
+      opacity: 0.7;
+      transform: none !important;
+      box-shadow: none !important;
+      pointer-events: none;
+    }
+
+    .preset-btn:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    /* 빈 입력 에러 안내 문구 */
+    .input-error-msg {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.86rem;
+      color: #ef4444;
+      font-weight: 600;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .input-error-msg.visible {
+      display: flex;
+    }
+
+    .chat-textarea.has-error {
+      border-color: #ef4444 !important;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+      animation: shake 0.35s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-4px); }
+      40%, 80% { transform: translateX(4px); }
+    }
+
+    /* 서버 슬립(지연) 시 안내 배너 */
+    .slow-server-notice {
+      display: none;
+      background-color: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      gap: 12px;
+      align-items: center;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .slow-server-notice.visible {
+      display: flex;
+    }
+
+    .slow-server-icon {
+      font-size: 1.35rem;
+      flex-shrink: 0;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    .slow-server-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .slow-server-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #1e40af;
+    }
+
+    .slow-server-desc {
+      font-size: 0.82rem;
+      color: #475569;
+      line-height: 1.4;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.12); opacity: 0.75; }
     }
 
     /* 에러 알림 배너 */
@@ -546,22 +627,69 @@
       flex-shrink: 0;
     }
 
-    /* 모바일 대응 */
+    /* 모바일 대응 (반응형 최적화) */
     @media (max-width: 600px) {
       body {
-        padding: 20px 12px 60px;
+        padding: 16px 12px 60px;
+      }
+      .container {
+        gap: 16px;
+      }
+      .header-logo {
+        font-size: 1.55rem;
+      }
+      .header-desc {
+        font-size: 0.88rem;
+        word-break: keep-all;
+      }
+      .card {
+        padding: 18px 16px;
+      }
+      .preset-controller {
+        padding: 12px 14px;
       }
       .preset-buttons {
         grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .preset-btn {
+        padding: 12px 14px;
+        min-height: 44px;
+        font-size: 0.88rem;
+      }
+      .chat-textarea {
+        font-size: 16px; /* iOS 사파리 자동 확대 줌인 방지 */
+        min-height: 140px;
+        padding: 14px;
+      }
+      .btn-analyze {
+        padding: 15px;
+        font-size: 1.05rem;
+        min-height: 50px;
       }
       .level-summary-card {
         flex-direction: column;
         align-items: flex-start;
-        gap: 16px;
+        gap: 14px;
+        padding: 18px 16px;
       }
       .score-badge {
-        align-items: flex-start;
         width: 100%;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .signal-card {
+        padding: 14px;
+      }
+      .signal-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+      .evidence-text, .advice-text {
+        word-break: break-word;
+        font-size: 0.86rem;
       }
     }
   </style>
@@ -608,6 +736,12 @@
         placeholder="중고거래 채팅이나 판매글 내용을 여기에 붙여넣어 주세요.&#10;예: '안전결제는 수수료 때문에 안 해요. 계좌로 바로 입금 부탁드려요.'"
       ></textarea>
 
+      <!-- 빈 입력 시 경고 안내 문구 -->
+      <div id="emptyInputNotice" class="input-error-msg">
+        <span>⚠️</span>
+        <span>분석할 대화 내용을 입력해 주세요.</span>
+      </div>
+
       <!-- 서버 오류 발생 시 안내 배너 -->
       <div id="errorBanner" class="error-banner" style="display: none;">
         <span>⚠️</span>
@@ -621,6 +755,15 @@
         </svg>
         <span>분석하기</span>
       </button>
+
+      <!-- 서버 슬립(지연) 시 안내 배너 -->
+      <div id="slowServerNotice" class="slow-server-notice">
+        <span class="slow-server-icon">⏳</span>
+        <div class="slow-server-content">
+          <span class="slow-server-title">처음 분석은 시간이 걸릴 수 있어요</span>
+          <span class="slow-server-desc">무료 서버가 절전 모드에서 깨어나는 중입니다. 잠시만 기다려 주세요 (약 20~40초)</span>
+        </div>
+      </div>
     </section>
 
     <!-- 3. 결과 영역 -->
@@ -672,19 +815,24 @@
   </div>
 
   <script>
-    /**
-     * 예시 대화 샘플 정의 (서버 실제 판정 테스트용)
-     * 프리셋 버튼 클릭 시 입력창에 대화 내용만 채워집니다.
+
+        /**
+     * [시연 대화 프리셋]
+     * 3번(신재원 님) 확정 시연 대화 3개 (Issue #44 / docs/demo_conversations.md)
+     * 1) safe: 정상 거래 대화 (아이패드) -> 판정: "특이 신호 없음" (0점)
+     * 2) caution: 주의 대화 (자전거, 빠른 입금 요구) -> 판정: "주의" (2점)
+     * 3) danger: 여러 위험 신호 대화 (갤럭시 버즈, 안전결제 거부 + 카톡 유도 + 유사 URL) -> 판정: "여러 위험 신호" (5점)
      */
-    const PRESET_SAMPLES = {
-      // 1) 주의 예시 (안전결제 거부)
-      caution: "구매자: 안전결제로 거래 가능할까요?\n판매자: 죄송하지만 안전결제는 안 해요. 직거래나 계좌입금만 받습니다.",
+        const PRESET_SAMPLES = {
+      // 1) 정상 대화 (오탐 방지 확인: 구매자의 "안전결제 되나요?" 질문을 신호로 잡지 않음)
+      safe: "구매자: 안녕하세요, 아이패드 아직 있나요?\n판매자: 네 있어요!\n구매자: 혹시 안전결제 되나요?\n판매자: 네 안전결제로 하셔도 돼요.\n구매자: 좋아요, 결제할게요.",
 
-      // 2) 여러 위험 신호 예시 (안전결제 거부 + 빠른 입금 요구)
-      danger: "구매자: 혹시 번개페이 안전결제 되나요?\n판매자: 안전결제는 안 해요. 오늘안에 입금 해주세요.",
+      // 2) 주의 대화 (빠른 입금 요구: PAYMENT_PRESSURE)
+      caution: "구매자: 자전거 아직 판매 중이세요?\n판매자: 네, 문의가 많아서 오늘 입금하시는 분께 드릴게요.\n구매자: 직거래는 안 되나요?\n판매자: 거리가 멀어서 택배로만 가능해요.",
 
-      // 3) 특이 신호 없음 예시 (정상 거래 대화)
-      safe: "구매자: 혹시 안전결제로 구매할 수 있을까요?\n판매자: 네 안전결제도 가능해요. 원하시는 방식으로 진행해 드릴게요."
+      // 3) 여러 위험 신호 대화 (안전결제 거부 + 외부 메신저 유도 + 유사 URL)
+      danger: "구매자: 갤럭시 버즈 아직 있나요?\n판매자: 네 있어요. 안전결제는 안 해요, 수수료가 아까워서요.\n판매자: 여기 말고 카톡으로 얘기해요. 아이디 abc123 이에요.\n판매자: 결제는 이 링크로 해주세요 https://daangn-pay.com/order\n구매자: 아 네..."
+
     };
 
     // 현재 선택된 프리셋 키
@@ -707,8 +855,9 @@
       chatInput.value = PRESET_SAMPLES[key] || '';
       chatInput.focus();
 
-      // 에러 안내 숨기기
+      // 에러 안내 및 빈 입력 경고 숨기기
       hideError();
+      clearEmptyInputError();
     }
 
     /**
@@ -719,6 +868,52 @@
       chatInput.value = PRESET_SAMPLES[currentPresetKey] || PRESET_SAMPLES.caution;
       chatInput.focus();
       hideError();
+      clearEmptyInputError();
+    }
+
+    /**
+
+     * 빈 입력 안내 표시 (alert 대신 인라인 경고)
+
+     */
+    function showEmptyInputError() {
+      const chatInput = document.getElementById('chatInput');
+      const notice = document.getElementById('emptyInputNotice');
+      if (chatInput && notice) {
+        chatInput.classList.add('has-error');
+        notice.classList.add('visible');
+        chatInput.focus();
+      }
+    }
+
+    /**
+     * 빈 입력 안내 해제
+     */
+    function clearEmptyInputError() {
+      const chatInput = document.getElementById('chatInput');
+      const notice = document.getElementById('emptyInputNotice');
+      if (chatInput) chatInput.classList.remove('has-error');
+      if (notice) notice.classList.remove('visible');
+    }
+
+    /**
+     * 서버 슬립(지연) 안내 노출
+     */
+    function showSlowServerNotice() {
+      const notice = document.getElementById('slowServerNotice');
+      if (notice) {
+        notice.classList.add('visible');
+      }
+    }
+
+    /**
+     * 서버 슬립(지연) 안내 숨김
+     */
+    function hideSlowServerNotice() {
+      const notice = document.getElementById('slowServerNotice');
+      if (notice) {
+        notice.classList.remove('visible');
+      }
     }
 
     /**
@@ -755,17 +950,25 @@
       const text = chatInput.value.trim();
 
       hideError();
+      clearEmptyInputError();
 
-      // 입력값이 비어있을 경우 경고 안내
+
+      // 1. 빈 입력이면 안내 문구 표시 (시연 중 alert 팝업 대신 인라인 피드백)
+
       if (!text) {
-        alert('분석할 대화 내용을 입력해 주세요.');
-        chatInput.focus();
+        showEmptyInputError();
         return;
       }
 
-      // 분석 진행 중 버튼 상태 변경 (로딩 피드백)
+
+      // 2. 분석 진행 중 표시 (버튼 비활성화 + 입력창 및 프리셋 잠금 + "분석 중...")
+
       const originalBtnHTML = analyzeBtn.innerHTML;
       analyzeBtn.disabled = true;
+      chatInput.readOnly = true;
+      const presetButtons = document.querySelectorAll('.preset-btn');
+      presetButtons.forEach(btn => btn.disabled = true);
+
       analyzeBtn.innerHTML = `
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;">
           <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
@@ -773,6 +976,13 @@
         </svg>
         <span>분석 중...</span>
       `;
+
+
+      // 3. 서버가 잠들어 있어 느릴 때 안내 ("처음 분석은 시간이 걸릴 수 있어요" - 2.5초 지연 시 노출)
+
+      let slowServerTimer = setTimeout(() => {
+        showSlowServerNotice();
+      }, 2500);
 
       try {
         // 실제 백엔드 API에 POST 요청
@@ -799,8 +1009,17 @@
         // 서버 오류 시 사용자 안내
         showError("분석에 실패했어요. 서버 연결 상태를 확인하고 다시 시도해 주세요.");
       } finally {
+
+        // 서버 지연 타이머 해제 및 안내 숨김
+        clearTimeout(slowServerTimer);
+        hideSlowServerNotice();
+
+        // 버튼 및 입력 컨트롤 원복
+
         analyzeBtn.disabled = false;
         analyzeBtn.innerHTML = originalBtnHTML;
+        chatInput.readOnly = false;
+        presetButtons.forEach(btn => btn.disabled = false);
       }
     }
 
@@ -923,6 +1142,14 @@
       const analyzeBtn = document.getElementById('analyzeBtn');
       if (analyzeBtn) {
         analyzeBtn.addEventListener('click', handleAnalyze);
+      }
+
+
+      // 입력창 타이핑 시 빈 입력 에러 안내 자동 제거
+
+      const chatInput = document.getElementById('chatInput');
+      if (chatInput) {
+        chatInput.addEventListener('input', clearEmptyInputError);
       }
     });
   </script>
