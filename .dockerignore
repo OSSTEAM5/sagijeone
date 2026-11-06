@@ -1,0 +1,4 @@
+.git
+__pychache__
+*.pyc
+backend/try_url.py
