@@ -32,6 +32,8 @@ DEMO_CASES = [
 ]
 
 
+# [수업 적용] 4강 Decorator — 인자를 받는 데코레이터로 테스트 하나를 대화 3개에 반복 실행
+# (데코레이터는 테스트 실행 때가 아니라 pytest가 파일을 import할 때 먼저 실행됨)
 @pytest.mark.parametrize(
     "text, expected_level, expected_codes",
     DEMO_CASES,
