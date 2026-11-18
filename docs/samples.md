@@ -74,7 +74,7 @@
 | level | 특이 신호 없음 | 특이 신호 없음 |
 | 신호 | 없음 | 없음 |
 
-캡처: (없음 — 예정: 당근 · 라이트)
+캡처: ![N02 캡처](images/samples/N02_daangn_dark.png)
 
 ## N03. 정상(헷갈림) — '입금 확인했어요' (입금 단어가 나옴)
 
@@ -230,7 +230,7 @@
 | level | 특이 신호 없음 | 특이 신호 없음 |
 | 신호 | 없음 | 없음 |
 
-캡처: (없음 — 예정: 번개장터 · 라이트)
+캡처: ![N10 캡처](images/samples/N10_bunjang_light.png)
 
 ## R01. 위험 — 안전결제 거부
 
@@ -250,7 +250,7 @@
 | level | 주의 | 주의 |
 | 신호 | `SAFE_PAYMENT_REFUSAL` (안전결제 거부) | `SAFE_PAYMENT_REFUSAL` (안전결제 거부) |
 
-캡처: (없음 — 예정: 당근 · 다크)
+캡처: ![R01 캡처](images/samples/R01_daangn_light.png)
 
 ## R02. 위험 — 빠른 입금 요구
 
@@ -269,7 +269,7 @@
 | level | 주의 | 주의 |
 | 신호 | `PAYMENT_PRESSURE` (빠른 입금 요구) | `PAYMENT_PRESSURE` (빠른 입금 요구) |
 
-캡처: (없음 — 예정: 카카오톡 · 라이트)
+캡처: ![R02 캡처](images/samples/R02_kakao_light.png)
 
 ## R03. 위험 — 외부 메신저 이동
 
@@ -403,7 +403,7 @@
 | level | 여러 위험 신호 | 여러 위험 신호 |
 | 신호 | `BANK_TRANSFER_ONLY` (계좌이체만 요구), `SAFE_PAYMENT_REFUSAL` (안전결제 거부) | `BANK_TRANSFER_ONLY` (계좌이체만 요구), `SAFE_PAYMENT_REFUSAL` (안전결제 거부) |
 
-캡처: (없음 — 예정: 번개장터 · 다크)
+캡처: ![R09 캡처](images/samples/R09_bunjang_light.png)
 
 ## R10. 위험(여러 개) — 텔레그램 + 선입금 + 단축 URL
 
