@@ -7,6 +7,7 @@
     py experiments/ocr_trial.py docs/images/ocr_sample_chat.png
 """
 import sys
+import time
 from pathlib import Path
 
 import easyocr
@@ -23,9 +24,14 @@ SAME_BUBBLE_GAP = 20    # 위아래 줄 간격이 이보다 작으면 같은 말
 
 def read_boxes(image_path: str) -> list[dict]:
     """OCR로 글자 덩어리(박스)마다 위치와 텍스트를 뽑기"""
+    t0 = time.perf_counter()
     reader = easyocr.Reader(["ko", "en"], gpu=False)
+    t1 = time.perf_counter()
+    results = reader.readtext(image_path)
+    t2 = time.perf_counter()
+    print(f"## 처리 시간: 모델 준비 {t1 - t0:.1f}초 / 글자 인식 {t2 - t1:.1f}초\n")
     boxes = []
-    for points, text, conf in reader.readtext(image_path):
+    for points, text, conf in results:
         xs = [p[0] for p in points]
         ys = [p[1] for p in points]
         boxes.append({"text": text, "conf": conf,
