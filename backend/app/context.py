@@ -9,7 +9,7 @@ from app.models import Message, Signal
 
 # [수업 적용] 5강 객체 참조·가변성 — 바뀌면 안 되는 값은 리스트 대신 불변 튜플로 둠
 QUESTION_ENDINGS = ("나요", "까요")   # 질문으로 끝나는 말
-REQUEST_WORDS = ["말고"]             # 질문 모양이어도 사실상 요구인 말
+REQUEST_WORDS = ("말고",)            # 질문 모양이어도 사실상 요구인 말
 
 
 # [수업 적용] 2강 Function Annotations — 입력(str)과 결과(bool) 형식을 타입 힌트로 명시
