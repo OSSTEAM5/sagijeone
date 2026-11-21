@@ -16,6 +16,19 @@ REFUSAL_RE = re.compile(
     r"(안\s|안$|안해|안 해|안돼|안 돼|안되|안 되|말고|거절|싫|하지\s*않|하지\s*마|안\s*받|못\s*해|어려워|불가)"
 )
 
+# 중간에 다른 말이 끼는 문장 (#57)
+# 예) "안전결제는 수수료 때문에 안 해요", "안전결제는 좀 번거로워서 안 해요"
+# - 결제 수단과 거부 표현 사이에 글자 15개까지 허용 (문장부호 . ? ! 는 넘지 않음)
+# - (?!도) : "안전결제도 되는데 ..."처럼 허용하는 문장은 시작부터 제외
+# - (?!면\s) : "안전결제 하실 거면 오늘은 안 돼요"처럼 조건(~면) 뒤의 말은 거부로 보지 않음
+# - 거부 표현은 위와 같지만, "안내"를 잡지 않도록 "안" 뒤에 공백·끝을 요구하는 규칙은 그대로
+REFUSAL_GAP_RE = re.compile(
+    r"(안전\s*(결제|거래)|번개\s*페이|안심\s*결제)(?!도)(?:(?!면\s)[^.?!]){0,15}?"
+    r"(안\s|안$|안해|안 해|안돼|안 돼|안되|안 되|거절|싫|하지\s*않|하지\s*마|안\s*받|못\s*해|어려워|불가)"
+)
+# 거부가 아니라 "해도 되고 안 해도 돼요"처럼 선택을 맡기는 문장은 제외 (#57)
+REFUSAL_EXCLUDE = ["해도 돼", "해도 되", "해도돼", "해도되"]
+
 
 # [수업 적용] 4강 Decorator — @detector로 탐지기 자동 등록 (전략 패턴 개선)
 @detector
@@ -25,7 +38,9 @@ def detect_safe_payment_refusal(messages: list[Message]) -> list[Signal]:
     for i, m in enumerate(messages):
         if m["speaker"] == "buyer":     # 구매자 발언은 검사하지 않음
             continue
-        found = REFUSAL_RE.search(m["text"])
+        if any(w in m["text"] for w in REFUSAL_EXCLUDE):
+            continue
+        found = REFUSAL_RE.search(m["text"]) or REFUSAL_GAP_RE.search(m["text"])
         if found:
             signals.append({
                 "code": "SAFE_PAYMENT_REFUSAL",
@@ -46,6 +61,8 @@ PRESSURE_PATTERNS = [
     r"빨리\s*입금",
     r"(?<![가-힣])선\s*입금",       # 앞에 한글이 붙으면 제외 → "우선 입금"은 잡지 않음 (messenger.py와 같은 방식)
     r"먼저\s*입금",
+    r"오늘\s*(까지|중으로|중에)\s*입금",               # "오늘까지 입금해주세요"
+    r"입금(은|는)?\s*오늘\s*(까지|안에|안으로|중으로)",  # "입금 오늘까지 해주셔야 해요" (#57, 순서가 바뀐 문장)
 ]
 # 이 표현이 들어간 문장은 재촉이 아니라 입금 확인 안내 → 제외 (#43)
 PRESSURE_EXCLUDE = ["확인했"]
