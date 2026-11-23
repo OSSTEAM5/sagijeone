@@ -65,3 +65,28 @@ def test_safe_payment_refusal_not_detected(text):
 ])
 def test_review_false_positive_fixed(text):
     assert codes(text) == []
+
+
+# ---- #57 중간에 말이 끼는 문장 ----
+
+@pytest.mark.parametrize("text, code", [
+    ("판매자: 안전결제는 수수료 때문에 안 해요", "SAFE_PAYMENT_REFUSAL"),
+    ("판매자: 안전결제는 좀 번거로워서 안 해요", "SAFE_PAYMENT_REFUSAL"),
+    ("판매자: 입금 오늘까지 해주셔야 해요", "PAYMENT_PRESSURE"),
+])
+def test_gap_expression_detected(text, code):
+    assert code in codes(text)
+
+
+@pytest.mark.parametrize("text", [
+    "판매자: 안전결제 하시면 수수료는 제가 낼게요",
+    "판매자: 안전결제 안내 드릴게요",
+    "판매자: 안전결제 안 해도 되고 해도 돼요",
+    # #68 리뷰: 판매자가 오히려 안전결제를 원하는 문장
+    "판매자: 안전결제로 해주세요, 직거래는 안 돼요",
+    "판매자: 안전결제로만 거래하고 직거래는 안 해요",
+    "판매자: 안전결제 되고요 네고는 안 돼요",
+    "판매자: 안전결제 수수료는 제가 안 받을게요",
+])
+def test_gap_expression_not_detected(text):
+    assert codes(text) == []
