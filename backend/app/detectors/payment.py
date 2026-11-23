@@ -96,7 +96,8 @@ def detect_payment_pressure(messages: list[Message]) -> list[Signal]:
     return signals
 
 
-BANK_TRANSFER_ONLY_PATTERNS = ["계좌로만", "계좌이체만", "이체로만", "현금으로만"]
+BANK_TRANSFER_ONLY_PATTERNS = ["계좌로만", "계좌이체만", "이체로만", "현금으로만",
+                               "무통장입금으로만", "무통장 입금으로만", "무통장으로만"]   # #71
 # "계좌이체만 아니면 다 돼요"처럼 오히려 다른 방법을 허용하는 문장은 제외 (#43)
 BANK_TRANSFER_EXCLUDE = ["아니면"]
 
@@ -121,6 +122,84 @@ def detect_bank_transfer_only(messages: list[Message]) -> list[Signal]:
                     "evidence": m["text"],
                     "weight": 2,
                     "advice": "계좌이체만 고집한다면 플랫폼 안전결제를 요청하세요.",
+                })
+                break   # 한 문장에서 같은 신호는 한 번만
+    return signals
+
+
+# ---- #71 추가 입금 요구 ----
+# 이미 입금한 구매자에게 수수료·환불·오류 등을 핑계로 돈을 한 번 더 보내게 하는 수법
+# - "다시/한 번 더/재" + 입금·송금·결제 : "다시 입금해 주셔야 해요", "재결제"
+# - 입금·송금·결제 + "다시/한 번 더" + 하다·완료 : "결제를 한 번 더 완료하셔야 해요"
+# - "추가 입금", "추가로 3천원 송금", "3천원 더 보내주셔야"
+EXTRA_PAYMENT_PATTERNS = [
+    r"(다시|한\s*번\s*더|(?<![가-힣])재)\s*(입금|송금|결제)",   # "현재 결제"의 "재"는 제외
+    r"(입금|송금|결제)(을|를)?\s*(다시|한\s*번\s*더)\s*(해|하|완료|진행|보내)",   # "입금 다시 확인해 볼게요"는 제외
+    r"추가\s*(로)?[^.?!,]{0,8}?(입금|송금|결제)",                       # "추가로 3천원 송금해 주셔야"
+    r"\d+\s*(천|만)?\s*원\s*(만)?\s*더\s*(입금|송금|결제|보내)",           # "3천원 더 보내주셔야"
+]
+# 판매자가 돈을 돌려주는 말("다시 입금해 드릴게요")은 추가 입금 요구가 아님
+# ("부탁드려요"는 요구라서 제외하면 안 됨 → "해 드려요"처럼 앞에 "해"가 붙은 것만)
+EXTRA_PAYMENT_EXCLUDE = ["드릴게", "드릴께", "해 드려요", "해드려요", "해 드렸", "해드렸"]
+
+
+# [수업 적용] 4강 Decorator — @detector로 탐지기 자동 등록
+@detector
+def detect_extra_payment(messages: list[Message]) -> list[Signal]:
+    """판매자가 이미 입금한 구매자에게 추가 입금을 요구하는 표현"""
+    signals = []
+    for i, m in enumerate(messages):
+        if m["speaker"] == "buyer":     # 구매자 발언은 검사하지 않음
+            continue
+        if any(w in m["text"] for w in EXTRA_PAYMENT_EXCLUDE):
+            continue
+        for p in EXTRA_PAYMENT_PATTERNS:
+            found = re.search(p, m["text"])
+            if found:
+                signals.append({
+                    "code": "EXTRA_PAYMENT",
+                    "signal": "추가 입금 요구",
+                    "message_index": m.get("index", i),
+                    "match": found.group(),
+                    "evidence": m["text"],
+                    "weight": 3,        # 실제 피해로 바로 이어지는 수법
+                    "advice": "추가 입금을 요구하면 더 보내지 마세요. 이미 보낸 돈은 은행과 경찰(112)에 바로 신고하세요.",
+                })
+                break   # 한 문장에서 같은 신호는 한 번만
+    return signals
+
+
+# ---- #71 예금주 불일치 ----
+# 판매자 본인이 아닌 다른 사람 명의 계좌로 입금하게 하는 수법 (대포통장)
+# - "예금주/명의" 뒤에 "달라요/다른" : "예금주 이름이 달라요"
+# - 가족·지인 + 계좌/명의              : "가족 계좌라", "어머니 명의로"
+# - "제 명의 계좌로 보내주시면 돼요"는 본인 계좌라 잡지 않음 (목록에 "제"가 없음)
+ACCOUNT_NAME_MISMATCH_PATTERNS = [
+    r"(예금주|명의)[^.?!]{0,8}?(달라|다르|다른)",
+    r"(가족|엄마|어머니|아빠|아버지|부모님|와이프|아내|남편|동생|누나|언니|오빠|지인|친구|사촌)\s*(의\s*)?(계좌|명의|통장)",
+    r"(다른\s*사람|타인)\s*(의\s*)?(계좌|명의|통장)",
+]
+
+
+# [수업 적용] 4강 Decorator — @detector로 탐지기 자동 등록
+@detector
+def detect_account_name_mismatch(messages: list[Message]) -> list[Signal]:
+    """판매자가 본인이 아닌 다른 사람 명의 계좌로 입금하라고 하는 표현"""
+    signals = []
+    for i, m in enumerate(messages):
+        if m["speaker"] == "buyer":     # 구매자 발언은 검사하지 않음
+            continue
+        for p in ACCOUNT_NAME_MISMATCH_PATTERNS:
+            found = re.search(p, m["text"])
+            if found:
+                signals.append({
+                    "code": "ACCOUNT_NAME_MISMATCH",
+                    "signal": "예금주 불일치",
+                    "message_index": m.get("index", i),
+                    "match": found.group(),
+                    "evidence": m["text"],
+                    "weight": 2,
+                    "advice": "판매자 이름과 예금주가 다르면 입금하지 마세요. 판매자 본인 명의 계좌인지 확인하세요.",
                 })
                 break   # 한 문장에서 같은 신호는 한 번만
     return signals

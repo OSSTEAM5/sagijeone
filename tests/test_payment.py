@@ -90,3 +90,25 @@ def test_gap_expression_detected(text, code):
 ])
 def test_gap_expression_not_detected(text):
     assert codes(text) == []
+
+
+# ---- #71 추가 입금 요구 · 예금주 불일치 ----
+
+@pytest.mark.parametrize("text, code", [
+    ("판매자: 수수료가 입금이 안 돼서 다시 입금해 주셔야 해요", "EXTRA_PAYMENT"),
+    ("판매자: 환불받으시려면 결제를 한 번 더 완료하셔야 해요", "EXTRA_PAYMENT"),
+    ("판매자: 가족 계좌라 예금주 이름이 달라요", "ACCOUNT_NAME_MISMATCH"),
+    ("판매자: 무통장입금으로만 받아요", "BANK_TRANSFER_ONLY"),
+])
+def test_new_scam_pattern_detected(text, code):
+    assert code in codes(text)
+
+
+@pytest.mark.parametrize("text", [
+    "판매자: 배송비는 제가 낼게요",
+    "판매자: 입금 확인했어요, 내일 보내드릴게요",
+    "판매자: 제 명의 계좌로 보내주시면 돼요",
+])
+def test_new_scam_pattern_not_detected(text):
+    assert codes(text) == []
+
