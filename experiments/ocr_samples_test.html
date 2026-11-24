@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>recognizeChat 측정</title>
+<!--
+  [1번 담당] recognizeChat() 측정 페이지 (이슈 #70)
+  캡처 6장(가짜 캡처 1 + 실제 앱 캡처 5)을 읽어서 docs/samples.md 정답과 비교합니다.
+  실행 (저장소 맨 위 폴더에서):
+    py -m http.server 8000
+    → http://localhost:8000/experiments/ocr_samples_test.html
+-->
+<script src="../frontend/ocr.js"></script>
+<style>
+  body { font-family: "Malgun Gothic", sans-serif; margin: 24px; color: #111; background: #fff; }
+  table { border-collapse: collapse; font-size: .9rem; margin-bottom: 24px; }
+  td, th { border: 1px solid #ddd; padding: 4px 8px; text-align: left; vertical-align: top; }
+  pre { margin: 0; white-space: pre-wrap; }
+  #status { font-weight: bold; color: #0f766e; }
+</style>
+</head>
+<body>
+<h1>recognizeChat() 측정 — 캡처 6장</h1>
+<p><button id="run">측정 시작</button> <span id="status">대기 중</span></p>
+<table id="summary"></table>
+<div id="details"></div>
+
+<script>
+// 정답: docs/samples.md (N02, N10, R01, R02, R09) + docs/ocr_experiment.md 가짜 캡처
+const SAMPLES = [
+  { id: "가짜 캡처", app: "직접 만든 그림", file: "../docs/images/ocr_sample_chat.png", expected: `
+구매자: 안녕하세요 아이패드 아직 있나요?
+판매자: 네 있어요
+구매자: 안전결제로 구매 가능할까요?
+판매자: 안전결제는 안 해요
+판매자: 오늘 안에 입금해 주시면 바로 보내드릴게요
+판매자: 계좌는 123-45-678901 입니다
+구매자: 혹시 직거래는 안 되나요?
+판매자: 카톡 아이디 fake_seller로 연락 주세요` },
+  { id: "R02", app: "카카오톡 · 노랑", file: "../docs/images/samples/R02_kakao_light.png", expected: `
+구매자: 캠핑 의자 2개 아직 있나요?
+판매자: 네 있어요.
+구매자: 많이 쓰셨나요?
+판매자: 두 번 썼어요. 거의 새거예요.
+구매자: 고민 좀 해 보고 연락드릴게요.
+판매자: 문의가 많아서요, 오늘 안에 입금해 주시면 바로 보내드려요.
+구매자: 아 그래요? 조금만 생각해 볼게요.` },
+  { id: "R01", app: "당근 · 라이트", file: "../docs/images/samples/R01_daangn_light.png", expected: `
+구매자: 안녕하세요, 아이폰 15 아직 판매 중인가요?
+판매자: 네 아직 있어요.
+구매자: 배터리 성능은 몇 %인가요?
+판매자: 89%예요. 기스 거의 없어요.
+구매자: 혹시 5만 원만 깎아 주실 수 있나요?
+판매자: 3만 원까지는 가능해요.
+구매자: 좋아요. 안전결제로 할게요.
+판매자: 안전결제는 안 해요. 직거래만 가능해요.` },
+  { id: "N02", app: "당근 · 다크", file: "../docs/images/samples/N02_daangn_dark.png", expected: `
+구매자: 안녕하세요, 닌텐도 스위치 팔렸나요?
+판매자: 아직 안 팔렸어요.
+구매자: 조이콘 쏠림은 없나요?
+판매자: 네 없어요. 케이스랑 게임 칩 2개도 같이 드려요.
+구매자: 택배 거래 가능할까요?
+판매자: 네 가능해요. 안전결제 안내 드릴게요.
+판매자: 결제 요청 보냈어요. 확인해 주세요.
+구매자: 감사합니다!` },
+  { id: "R09", app: "중고나라 · 라이트", file: "../docs/images/samples/R09_joongna_light.png", expected: `
+구매자: 갤럭시 워치 아직 있나요?
+판매자: 네 있어요.
+구매자: 스트랩 여분도 있나요?
+판매자: 네 하나 더 드릴게요.
+구매자: 안전결제 되나요?
+판매자: 안전결제는 안돼요.
+판매자: 계좌이체만 가능해요. 입금하시면 바로 보내드릴게요.
+구매자: 아 그렇군요...` },
+  { id: "N10", app: "중고나라 · PC", file: "../docs/images/samples/N10_joongna_light.png", expected: `
+구매자: 카메라 아직 있나요?
+판매자: 네 있어요.
+구매자: 셔터 횟수는 어느 정도인가요?
+판매자: 5천 컷 정도예요.
+구매자: 제가 오늘 퇴근하고 입금해도 될까요?
+판매자: 천천히 하셔도 돼요. 안전결제로 해 주세요.
+구매자: 네 저녁에 결제할게요.` },
+];
+
+const parse = chat => chat.trim().split("\n").map(line => {
+  const [speaker, ...rest] = line.split(": ");
+  return { speaker, text: rest.join(": ") };
+});
+const squash = s => s.replace(/\s/g, "");
+
+function levenshtein(a, b) {
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++)
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
+const accuracy = (expected, got) => Math.max(0, 1 - levenshtein(expected, got) / expected.length);
+const similarity = (a, b) => 1 - levenshtein(a, b) / Math.max(a.length, b.length, 1);
+
+// 같은 화자 말을 이어 붙여서 화자별 글자 정확도 → 화자를 틀리면 양쪽 점수가 같이 떨어짐
+const textOf = (msgs, speaker) => squash(msgs.filter(m => m.speaker === speaker).map(m => m.text).join(""));
+
+function score(sample, result) {
+  const exp = parse(sample.expected);
+  const got = result.chat ? parse(result.chat) : [];
+  // 정답 메시지 어디와도 절반 이상 안 닮은 줄 = 안내 문구 등이 섞인 것
+  const extra = got.filter(g => Math.max(...exp.map(e => similarity(squash(e.text), squash(g.text)))) < 0.5);
+  return {
+    count: `${got.length} / ${exp.length}`,
+    all: accuracy(squash(exp.map(m => m.text).join("")), squash(got.map(m => m.text).join(""))),
+    seller: accuracy(textOf(exp, "판매자"), textOf(got, "판매자")),
+    buyer: accuracy(textOf(exp, "구매자"), textOf(got, "구매자")),
+    extra,
+  };
+}
+
+const pct = x => `${Math.round(x * 100)}%`;
+const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+async function runAll() {
+  const status = document.getElementById("status");
+  const rows = [];
+  const details = [];
+  window.ocrResults = [];
+  for (const sample of SAMPLES) {
+    status.textContent = `${sample.id} 읽는 중…`;
+    const result = await recognizeChatDetail(sample.file);
+    const s = score(sample, result);
+    window.ocrResults.push({ id: sample.id, ...result, score: s });
+    rows.push(`<tr><td>${sample.id}</td><td>${sample.app}</td><td>${result.preprocess}</td><td>${s.count}</td>` +
+      `<td>${pct(s.all)}</td><td>${pct(s.seller)}</td><td>${pct(s.buyer)}</td><td>${s.extra.length}</td>` +
+      `<td>${result.seconds.toFixed(1)}초</td></tr>`);
+    details.push(`<h2>${sample.id} (${sample.app})</h2><table><tr><th>정답</th><th>recognizeChat 결과</th></tr>` +
+      `<tr><td><pre>${esc(sample.expected.trim())}</pre></td><td><pre>${esc(result.chat)}</pre></td></tr></table>`);
+  }
+  document.getElementById("summary").innerHTML =
+    "<tr><th>캡처</th><th>앱</th><th>고른 전처리</th><th>메시지 수 (결과/정답)</th><th>글자 정확도</th>" +
+    "<th>판매자 글자</th><th>구매자 글자</th><th>섞인 줄</th><th>시간</th></tr>" + rows.join("");
+  document.getElementById("details").innerHTML = details.join("");
+  status.textContent = "완료";
+}
+
+// [수업 적용] 2강 First-Class Function — runAll 함수를 값처럼 이벤트 처리기로 넘김
+document.getElementById("run").addEventListener("click", runAll);
+</script>
+</body>
+</html>
