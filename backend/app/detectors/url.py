@@ -29,15 +29,50 @@ def load_domains(filename: str) -> set[str]:
 OFFICIAL_DOMAINS = load_domains("official_domains.csv")
 SHORTENERS = load_domains("shorteners.csv")
 
-URL_PATTERN = r"https?://[^\s]+|www\.[^\s]+"
+# [수업 적용] 5강 객체 참조·가변성 — 바뀌면 안 되는 목록은 frozenset으로
+# 공식 사이트 이름(도메인 맨 앞부분)만 모은 것: daangn, bunjang, kakaopay, ...
+# "bunjang-safe-pay.shop"처럼 공식 이름을 다른 주소에 끼워 넣은 경우를 찾는 데 씀
+BRAND_TO_DOMAIN = {d.split(".")[0]: d for d in OFFICIAL_DOMAINS}
+BRAND_NAMES = frozenset(BRAND_TO_DOMAIN)
+
+# 주소처럼 보이는 3가지
+# 1) http:// 또는 https:// 로 시작   2) www. 로 시작
+# 3) "kream.co.kr", "bunjang-safe-pay.shop/order" 처럼 앞부분 없이 쓴 주소
+#    → 아무 "단어.단어"나 잡지 않도록, 끝이 아래 목록(최상위 도메인)일 때만 주소로 봄
+TLDS = ("com|net|org|kr|shop|xyz|top|site|online|store|info|io|me|im|ly|do|gl|"
+        "link|click|app|live|vip|cc|co|biz|pro")
+URL_PATTERN = re.compile(
+    r"https?://[^\s]+"
+    r"|www\.[^\s]+"
+    rf"|(?<![\w@.])[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:{TLDS})(?![a-z0-9-])(?:/[^\s]*)?",
+    re.IGNORECASE,   # "Bunjang-Pay.SHOP"처럼 대문자가 섞여도 찾음
+)
+
+
+def refang(text: str) -> str:
+    """보안 글에서 쓰는 '무력화된 주소'를 원래 모양으로: hxxps://a[.]shop → https://a.shop"""
+    return re.sub(r"hxxp", "http", text, flags=re.IGNORECASE).replace("[.]", ".")
 
 
 def extract_urls(text: str) -> list[str]:
     """
     문장에서 URL만 뽑기
     "여기로 거래해요 https://bit.ly/a" → ["https://bit.ly/a"]
+    "kream.co.kr에서 확인하세요"       → ["kream.co.kr"]
     """
-    return re.findall(URL_PATTERN, text)
+    return URL_PATTERN.findall(refang(text))
+
+
+def brand_in_host(host: str) -> str | None:
+    """
+    주소를 '.'과 '-'로 잘라서, 조각 중에 공식 사이트 이름이 그대로 있으면 그 공식 도메인을 돌려줌
+    'bunjang-safe-pay.shop' → 'bunjang.co.kr'
+    'kakaobank.com'         → None  (조각 'kakaobank'는 'kakao'와 다른 이름 → 예전 오탐 방지)
+    """
+    for token in re.split(r"[.\-]", host):
+        if token in BRAND_NAMES:
+            return BRAND_TO_DOMAIN[token]
+    return None
 
 
 def get_host(url: str) -> str:
@@ -96,6 +131,10 @@ def check_url(url: str) -> tuple[str, str, int, str] | None:
         if SequenceMatcher(None, domain, official).ratio() >= 0.8:
             return ("URL_LOOKALIKE", "공식 사이트와 비슷한 주소", 3,
                     f"{official}과 비슷하지만 다른 주소예요. 주소를 다시 확인하세요.")
+    official = brand_in_host(host)          # 공식 이름 + 다른 단어: bunjang-safe-pay.shop
+    if official:
+        return ("URL_IMPERSONATION", "공식 사이트 사칭 의심", 3,
+                f"{official}이 아닌 주소예요. 결제 정보를 입력하지 마세요.")
     return None
 
 
