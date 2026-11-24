@@ -37,6 +37,9 @@ def test_extract_urls_not_url(text):
     # 기존 동작 유지
     ("판매자: https://daangn-pay.com/order", "URL_LOOKALIKE"),
     ("판매자: https://daangn.com.safe-pay.net/checkout", "URL_IMPERSONATION"),
+    ("판매자: hxxps://naverpay-safe[.]shop/pay/33019 여기로 결제하세요", "URL_IMPERSONATION"),  # #82 T-박태민-07
+    ("판매자: https://naverpaysafe.shop/pay 결제 링크예요", "URL_IMPERSONATION"),
+    ("판매자: https://tosspay-check.site/order 로 결제해 주세요", "URL_IMPERSONATION"),
 ])
 def test_fake_url_detected(text, code):
     assert code in codes(text)
@@ -45,6 +48,8 @@ def test_fake_url_detected(text, code):
 @pytest.mark.parametrize("text", [
     "판매자: kream.co.kr 들어가서 제 거래 내역 캡처해 드릴게요",   # 진짜 공식 주소 (T-정윤재-10)
     "판매자: https://www.kakaobank.com/ 여기 참고하세요",          # 예전 오탐
+    "판매자: https://www.naver.com 검색해 보세요",                 # 진짜 공식 주소
+    "판매자: https://pay.naver.com 에서 결제 내역 확인하세요",      # 공식 도메인의 하위 주소
     "판매자: https://www.daangn.com",
     "구매자: bunjang-safe-pay.shop 이거 맞는 주소예요?",            # 구매자가 보낸 링크
 ])

@@ -33,6 +33,17 @@ SHORTENERS = load_domains("shorteners.csv")
 # 공식 사이트 이름(도메인 맨 앞부분)만 모은 것: daangn, bunjang, kakaopay, ...
 # "bunjang-safe-pay.shop"처럼 공식 이름을 다른 주소에 끼워 넣은 경우를 찾는 데 씀
 BRAND_TO_DOMAIN = {d.split(".")[0]: d for d in OFFICIAL_DOMAINS}
+
+# 공식 도메인에는 없지만 사기 주소에 자주 붙여 쓰는 결제 서비스 이름 (#82 표본: naverpay-safe.shop)
+# → 앞부분이 이 이름으로 시작하면 사칭으로 봄: naverpay, naverpaysafe, npay-check ...
+# ※ "tossbank"처럼 실제로 있는 다른 서비스와 겹치지 않도록 결제 서비스 이름만 넣음
+PAY_ALIASES = {
+    "naverpay": "naver.com", "npay": "naver.com",
+    "bunjangpay": "bunjang.co.kr", "bungaepay": "bunjang.co.kr", "bgpay": "bunjang.co.kr",
+    "daangnpay": "daangn.com", "karrotpay": "daangn.com",
+    "tosspay": "toss.im",
+}
+BRAND_TO_DOMAIN.update({k: v for k, v in PAY_ALIASES.items() if v in OFFICIAL_DOMAINS})
 BRAND_NAMES = frozenset(BRAND_TO_DOMAIN)
 
 # 주소처럼 보이는 3가지
@@ -67,11 +78,15 @@ def brand_in_host(host: str) -> str | None:
     """
     주소를 '.'과 '-'로 잘라서, 조각 중에 공식 사이트 이름이 그대로 있으면 그 공식 도메인을 돌려줌
     'bunjang-safe-pay.shop' → 'bunjang.co.kr'
+    'naverpay-safe.shop'    → 'naver.com'     (결제 서비스 이름 PAY_ALIASES)
     'kakaobank.com'         → None  (조각 'kakaobank'는 'kakao'와 다른 이름 → 예전 오탐 방지)
     """
     for token in re.split(r"[.\-]", host):
         if token in BRAND_NAMES:
             return BRAND_TO_DOMAIN[token]
+        for alias in PAY_ALIASES:           # "naverpaysafe"처럼 결제 서비스 이름 뒤에 글자를 붙인 경우
+            if token.startswith(alias) and alias in BRAND_TO_DOMAIN:
+                return BRAND_TO_DOMAIN[alias]
     return None
 
 
