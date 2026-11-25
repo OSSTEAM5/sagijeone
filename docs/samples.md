@@ -115,7 +115,7 @@
 | level | 특이 신호 없음 | 특이 신호 없음 |
 | 신호 | 없음 | 없음 |
 
-캡처: (없음)
+캡처: ![N04 캡처](images/samples/N04_bunjang_light.png)
 
 ## N05. 정상(헷갈림) — '안전결제도 가능해요'
 
@@ -154,7 +154,7 @@
 | level | 특이 신호 없음 | 특이 신호 없음 |
 | 신호 | 없음 | 없음 |
 
-캡처: (없음)
+캡처: ![N06 캡처](images/samples/N06_kakao_light.png)
 
 ## N07. 정상(헷갈림) — 판매자가 진짜 공식 주소 링크를 보냄
 
@@ -291,7 +291,7 @@
 | level | 주의 | 주의 |
 | 신호 | `EXTERNAL_MESSENGER` (외부 메신저 이동 유도) | `EXTERNAL_MESSENGER` (외부 메신저 이동 유도) |
 
-캡처: (없음)
+캡처: ![R03 캡처](images/samples/R03_kakao_light.png)
 
 ## R04. 위험 — 계좌이체만 요구
 
@@ -310,7 +310,7 @@
 | level | 주의 | 주의 |
 | 신호 | `BANK_TRANSFER_ONLY` (계좌이체만 요구) | `BANK_TRANSFER_ONLY` (계좌이체만 요구) |
 
-캡처: (없음)
+캡처: ![R04 캡처](images/samples/R04_kakao_dark.png)
 
 ## R05. 위험 — 공식 사이트와 비슷한 주소
 
@@ -428,7 +428,7 @@
 | level | 여러 위험 신호 | 여러 위험 신호 |
 | 신호 | `EXTERNAL_MESSENGER` (외부 메신저 이동 유도), `PAYMENT_PRESSURE` (빠른 입금 요구), `URL_SHORTENER` (단축 URL) | `EXTERNAL_MESSENGER` (외부 메신저 이동 유도), `PAYMENT_PRESSURE` (빠른 입금 요구), `URL_SHORTENER` (단축 URL) |
 
-캡처: (없음)
+캡처: ![R10 캡처](images/samples/R10_kakao_dark.png)
 
 ---
 
