@@ -627,6 +627,242 @@
       flex-shrink: 0;
     }
 
+    /* 입력 탭 컨트롤 */
+    .input-tabs-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2px;
+    }
+
+    .input-tabs {
+      display: flex;
+      background: #e2e8f0;
+      padding: 4px;
+      border-radius: var(--radius-md);
+      width: 100%;
+      gap: 4px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      padding: 10px 16px;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #64748b;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+
+    .tab-btn.active {
+      background: #ffffff;
+      color: #0f172a;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      font-weight: 700;
+    }
+
+    /* 캡처 컨트롤러 */
+    .capture-controller {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .drop-zone {
+      border: 2px dashed #cbd5e1;
+      border-radius: var(--radius-md);
+      padding: 28px 20px;
+      text-align: center;
+      background: #f8fafc;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--primary);
+      background: #eff6ff;
+    }
+
+    .drop-zone-icon {
+      font-size: 2.2rem;
+      line-height: 1;
+    }
+
+    .drop-zone-title {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #1e293b;
+    }
+
+    .drop-zone-sub {
+      font-size: 0.83rem;
+      color: var(--text-muted);
+    }
+
+    .privacy-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: #f1f5f9;
+      color: #475569;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.76rem;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+
+    /* 미리보기 카드 */
+    .preview-card {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .preview-file-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: #334155;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .preview-file-size {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .btn-remove-image {
+      background: none;
+      border: none;
+      color: #ef4444;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      transition: background 0.15s;
+    }
+
+    .btn-remove-image:hover {
+      background: #fee2e2;
+    }
+
+    .preview-img-wrapper {
+      width: 100%;
+      max-height: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f172a;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+    }
+
+    .preview-img {
+      max-width: 100%;
+      max-height: 240px;
+      object-fit: contain;
+    }
+
+    /* 글자 인식 버튼 */
+    .btn-ocr {
+      width: 100%;
+      padding: 13px 20px;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-ocr:hover {
+      background: linear-gradient(135deg, #1e293b, #334155);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-ocr:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* OCR 인식 안내 배너 */
+    .ocr-notice-banner {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-left: 4px solid #f59e0b;
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.88rem;
+      color: #92400e;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .ocr-notice-icon {
+      font-size: 1.25rem;
+      line-height: 1;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .ocr-notice-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .ocr-notice-content strong {
+      font-size: 0.92rem;
+      color: #78350f;
+    }
+
+    .ocr-notice-content span {
+      font-size: 0.82rem;
+      color: #92400e;
+    }
+
     /* 모바일 대응 (반응형 최적화) */
     @media (max-width: 600px) {
       body {
@@ -661,6 +897,21 @@
         font-size: 16px; /* iOS 사파리 자동 확대 줌인 방지 */
         min-height: 140px;
         padding: 14px;
+      }
+      .tab-btn {
+        padding: 9px 12px;
+        font-size: 0.88rem;
+      }
+      .drop-zone {
+        padding: 22px 14px;
+      }
+      .preview-img-wrapper {
+        max-height: 190px;
+      }
+      .btn-ocr {
+        padding: 13px;
+        font-size: 0.95rem;
+        min-height: 48px;
       }
       .btn-analyze {
         padding: 15px;
@@ -704,8 +955,22 @@
       <p class="header-desc">중고거래 대화 내용을 붙여넣으면 위험 신호와 근거를 분석해 드립니다.</p>
     </header>
 
-    <!-- 예시 대화 불러오기 (프리셋) -->
-    <div class="preset-controller">
+    <!-- 입력 방식 선택 탭 (텍스트로 입력 / 캡처로 입력) -->
+    <div class="input-tabs-wrapper">
+      <div class="input-tabs" role="tablist">
+        <button type="button" class="tab-btn active" id="tabTextBtn" onclick="switchInputTab('text')" role="tab" aria-selected="true">
+          <span>✏️</span>
+          <span>텍스트로 입력</span>
+        </button>
+        <button type="button" class="tab-btn" id="tabCaptureBtn" onclick="switchInputTab('capture')" role="tab" aria-selected="false">
+          <span>📷</span>
+          <span>캡처로 입력</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- [탭 1] 텍스트 예시 대화 불러오기 (프리셋) -->
+    <div id="presetController" class="preset-controller">
       <div class="preset-header">
         <span>💡 예시 대화 불러오기</span>
         <span class="preset-tag">클릭 시 자동 입력</span>
@@ -723,11 +988,54 @@
       </div>
     </div>
 
-    <!-- 2. 입력 영역 -->
+    <!-- [탭 2] 캡처 이미지 업로드 컨트롤러 (OCR 연결 전 단계) -->
+    <div id="captureController" class="card capture-controller" style="display: none;">
+      <!-- 파일 업로드 드롭존 (이미지 선택 전) -->
+      <div id="dropZone" class="drop-zone" onclick="triggerFileInput()">
+        <input type="file" id="imageInput" accept="image/*" style="display: none;">
+        <div class="drop-zone-icon">🖼️</div>
+        <div class="drop-zone-title">캡처 이미지를 끌어다 놓거나 클릭하여 선택하세요</div>
+        <div class="drop-zone-sub">스마트폰 캡처 사진, PNG, JPG, WebP 지원</div>
+        <div class="privacy-badge">🔒 개인정보 보호: 이미지는 서버로 전송되지 않고 브라우저에서만 처리됩니다</div>
+      </div>
+
+      <!-- 이미지 미리보기 & 글자 인식 버튼 (이미지 선택 후) -->
+      <div id="previewCard" class="preview-card" style="display: none;">
+        <div class="preview-header">
+          <div class="preview-file-info">
+            <span>📎</span>
+            <span id="previewFileName">screenshot.png</span>
+            <span id="previewFileSize" class="preview-file-size">(120 KB)</span>
+          </div>
+          <button type="button" class="btn-remove-image" onclick="removeImage()">✕ 이미지 취소</button>
+        </div>
+        <div class="preview-img-wrapper">
+          <img id="imagePreview" src="" alt="업로드한 캡처 미리보기" class="preview-img">
+        </div>
+        <button type="button" id="ocrBtn" class="btn-ocr" onclick="handleOcrExtract()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span>글자 인식</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 2. 입력 및 분석 영역 -->
     <section class="card input-section">
       <div class="label-row">
-        <label for="chatInput" class="input-label">대화 내용 붙여넣기</label>
-        <span class="sample-fill-link" onclick="fillCurrentSample()">샘플 대화 채우기</span>
+        <label for="chatInput" id="chatInputLabel" class="input-label">대화 내용 붙여넣기</label>
+        <span id="sampleFillLink" class="sample-fill-link" onclick="fillCurrentSample()">샘플 대화 채우기</span>
+      </div>
+
+      <!-- OCR 인식 완료 시 안내 문구 (요구사항: "인식된 글자가 틀릴 수 있어요. 확인 후 분석해 주세요.") -->
+      <div id="ocrNoticeBanner" class="ocr-notice-banner" style="display: none;">
+        <span class="ocr-notice-icon">✏️</span>
+        <div class="ocr-notice-content">
+          <strong>인식된 글자가 틀릴 수 있어요. 확인 후 분석해 주세요.</strong>
+          <span>오타나 누락된 부분이 있다면 아래 입력창에서 직접 수정한 뒤 분석해 주세요.</span>
+        </div>
       </div>
 
       <textarea 
@@ -1145,6 +1453,143 @@
         .replace(/'/g, '&#039;');
     }
 
+    /**
+     * [수업 적용] 3강 전략 패턴 (함수/딕셔너리 지향 전략) — 입력 모드('text' vs 'capture') 전환 전략
+     * 탭 전환 함수: [텍스트로 입력] vs [캡처로 입력]
+     */
+    let currentInputTab = 'text';
+
+    function switchInputTab(tab) {
+      currentInputTab = tab;
+      const tabTextBtn = document.getElementById('tabTextBtn');
+      const tabCaptureBtn = document.getElementById('tabCaptureBtn');
+      const presetController = document.getElementById('presetController');
+      const captureController = document.getElementById('captureController');
+      const sampleFillLink = document.getElementById('sampleFillLink');
+      const chatInputLabel = document.getElementById('chatInputLabel');
+
+      if (tab === 'text') {
+        tabTextBtn.classList.add('active');
+        tabCaptureBtn.classList.remove('active');
+        presetController.style.display = 'flex';
+        captureController.style.display = 'none';
+        if (sampleFillLink) sampleFillLink.style.display = 'inline';
+        if (chatInputLabel) chatInputLabel.textContent = '대화 내용 붙여넣기';
+      } else {
+        tabCaptureBtn.classList.add('active');
+        tabTextBtn.classList.remove('active');
+        presetController.style.display = 'none';
+        captureController.style.display = 'flex';
+        if (sampleFillLink) sampleFillLink.style.display = 'none';
+        if (chatInputLabel) chatInputLabel.textContent = '인식된 대화 내용 (직접 수정 가능)';
+      }
+      hideError();
+      clearEmptyInputError();
+    }
+
+    /**
+     * 파일 선택 다이얼로그 호출
+     */
+    function triggerFileInput() {
+      const imageInput = document.getElementById('imageInput');
+      if (imageInput) imageInput.click();
+    }
+
+    /**
+     * [수업 적용] 2강 Higher-Order Functions — FileReader의 onload 비동기 콜백 함수를 통한 이미지 로컬 미리보기
+     * (원칙: 이미지는 서버로 전송하지 않고 브라우저 로컬 메모리에서만 렌더링 - 개인정보 보호)
+     */
+    function handleImageFile(file) {
+      if (!file) return;
+
+      if (!file.type.startsWith('image/')) {
+        showError('이미지 파일(PNG, JPG, WebP 등)만 선택할 수 있습니다.');
+        return;
+      }
+
+      const dropZone = document.getElementById('dropZone');
+      const previewCard = document.getElementById('previewCard');
+      const imagePreview = document.getElementById('imagePreview');
+      const previewFileName = document.getElementById('previewFileName');
+      const previewFileSize = document.getElementById('previewFileSize');
+
+      // 파일 정보 표시
+      if (previewFileName) previewFileName.textContent = file.name;
+      if (previewFileSize) {
+        const sizeKb = (file.size / 1024).toFixed(1);
+        previewFileSize.textContent = `(${sizeKb} KB)`;
+      }
+
+      // FileReader API로 로컬 Data URL 생성 (서버 전송 없음)
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        if (imagePreview) {
+          imagePreview.src = e.target.result;
+        }
+        if (dropZone) dropZone.style.display = 'none';
+        if (previewCard) previewCard.style.display = 'flex';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    /**
+     * 선택된 이미지 제거 (초기화)
+     */
+    function removeImage() {
+      const imageInput = document.getElementById('imageInput');
+      const dropZone = document.getElementById('dropZone');
+      const previewCard = document.getElementById('previewCard');
+      const imagePreview = document.getElementById('imagePreview');
+      const ocrNoticeBanner = document.getElementById('ocrNoticeBanner');
+
+      if (imageInput) imageInput.value = '';
+      if (imagePreview) imagePreview.src = '';
+      if (dropZone) dropZone.style.display = 'flex';
+      if (previewCard) previewCard.style.display = 'none';
+      if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'none';
+    }
+
+    /**
+     * [수업 적용] 5강 객체 참조 (불변 상수 참조) — 시연 대화를 가짜 OCR 인식 결과 Mock 데이터로 활용
+     * "글자 인식" 버튼 클릭 핸들러 (OCR 연결 전 Mock 단계)
+     */
+    function handleOcrExtract() {
+      const ocrBtn = document.getElementById('ocrBtn');
+      const chatInput = document.getElementById('chatInput');
+      const ocrNoticeBanner = document.getElementById('ocrNoticeBanner');
+
+      if (!ocrBtn || !chatInput) return;
+
+      // 1. 인식 진행 피드백 (버튼 로딩 표시)
+      const originalHTML = ocrBtn.innerHTML;
+      ocrBtn.disabled = true;
+      ocrBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;">
+          <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
+          <path d="M12 2a10 10 0 0 1 10 10"></path>
+        </svg>
+        <span>글자 인식 중...</span>
+      `;
+
+      // 2. 가짜 인식 결과는 현재 시연 대화(여러 위험 신호)를 그대로 입력창에 채워줌
+      setTimeout(() => {
+        ocrBtn.disabled = false;
+        ocrBtn.innerHTML = originalHTML;
+
+        // 가짜 OCR 인식 텍스트 주입 (시연 대화 3번: 여러 위험 신호)
+        chatInput.value = PRESET_SAMPLES.danger;
+
+        // 안내 문구 표시 (요구사항: "인식된 글자가 틀릴 수 있어요. 확인 후 분석해 주세요.")
+        if (ocrNoticeBanner) {
+          ocrNoticeBanner.style.display = 'flex';
+          ocrNoticeBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        clearEmptyInputError();
+        chatInput.focus();
+      }, 500);
+    }
+
     // [수업 적용] 2강 일급 함수 (First-Class Functions) — 함수를 호출()하지 않고 일급 객체(값)로서 이벤트 리스너에 인자로 전달
     window.addEventListener('DOMContentLoaded', () => {
       // 초기 화면 로드 시 기본 예시 대화(주의) 채워두기
@@ -1163,6 +1608,34 @@
       const chatInput = document.getElementById('chatInput');
       if (chatInput) {
         chatInput.addEventListener('input', clearEmptyInputError);
+      }
+
+      // [수업 적용] 2강 일급 함수 — 이미지 파일 선택 및 드래그 앤 드롭 이벤트 리스너 등록
+      const imageInput = document.getElementById('imageInput');
+      if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+          if (e.target.files && e.target.files[0]) {
+            handleImageFile(e.target.files[0]);
+          }
+        });
+      }
+
+      const dropZone = document.getElementById('dropZone');
+      if (dropZone) {
+        dropZone.addEventListener('dragover', function(e) {
+          e.preventDefault();
+          dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', function() {
+          dropZone.classList.remove('dragover');
+        });
+        dropZone.addEventListener('drop', function(e) {
+          e.preventDefault();
+          dropZone.classList.remove('dragover');
+          if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+            handleImageFile(e.dataTransfer.files[0]);
+          }
+        });
       }
     });
   </script>
