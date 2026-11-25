@@ -90,3 +90,52 @@ def test_gap_expression_detected(text, code):
 ])
 def test_gap_expression_not_detected(text):
     assert codes(text) == []
+
+
+# ---- #71 추가 입금 요구 · 예금주 불일치 ----
+
+@pytest.mark.parametrize("text, code", [
+    ("판매자: 수수료가 입금이 안 돼서 다시 입금해 주셔야 해요", "EXTRA_PAYMENT"),
+    ("판매자: 환불받으시려면 결제를 한 번 더 완료하셔야 해요", "EXTRA_PAYMENT"),
+    ("판매자: 가족 계좌라 예금주 이름이 달라요", "ACCOUNT_NAME_MISMATCH"),
+    ("판매자: 무통장입금으로만 받아요", "BANK_TRANSFER_ONLY"),
+])
+def test_new_scam_pattern_detected(text, code):
+    assert code in codes(text)
+
+
+@pytest.mark.parametrize("text", [
+    "판매자: 배송비는 제가 낼게요",
+    "판매자: 입금 확인했어요, 내일 보내드릴게요",
+    "판매자: 제 명의 계좌로 보내주시면 돼요",
+])
+def test_new_scam_pattern_not_detected(text):
+    assert codes(text) == []
+
+
+
+# ---- 블라인드 표본 미탐 보강 (표본 문장을 그대로 쓰지 않고 같은 수법의 다른 문장으로 시험) ----
+
+@pytest.mark.parametrize("text, code", [
+    ("판매자: 20분 안에 입금 주시면 바로 확정해 드릴게요", "PAYMENT_PRESSURE"),
+    ("판매자: 오늘 결제 안 하시면 다음 분께 넘길게요", "PAYMENT_PRESSURE"),
+    ("판매자: 먼저 입금하시는 분께 드리려고요", "PAYMENT_PRESSURE"),
+    ("판매자: 환불받으시려면 5만원 보내주셔야 처리돼요", "EXTRA_PAYMENT"),
+    ("판매자: 보증금 2만원만 넣어주시면 물건 도착할 때 돌려드려요", "EXTRA_PAYMENT"),
+    ("구매자: 안전결제로 사도 될까요?\n판매자: 그건 수수료 떼여서 곤란해요", "SAFE_PAYMENT_REFUSAL"),
+    ("판매자: 확정 먼저 눌러 주시면 바로 보낼게요", "PURCHASE_CONFIRM_FIRST"),
+])
+def test_blind_miss_detected(text, code):
+    assert code in codes(text)
+
+
+@pytest.mark.parametrize("text", [
+    "판매자: 30분 안에 도착해요",
+    "판매자: 죄송해요 다른 분께 팔렸어요",
+    "판매자: 택배는 3시 마감이라 내일 보내요",
+    "판매자: 상품 보내주시면 확인 후 환불해 드릴게요",
+    "구매자: 안전결제 되나요?\n판매자: 네 그건 가능해요",
+    "판매자: 물건 받으시고 구매확정 눌러주세요",
+])
+def test_blind_miss_not_detected(text):
+    assert codes(text) == []
