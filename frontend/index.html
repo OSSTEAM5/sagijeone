@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>사기전에 🔍 - 중고거래 위험 신호 분석기</title>
+  <!-- [1번 연동] 브라우저 내 Tesseract.js 기반 채팅 캡처 OCR 모듈 -->
+  <script src="ocr.js"></script>
   <!-- Noto Sans KR 웹 폰트 -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -863,6 +865,44 @@
       color: #92400e;
     }
 
+    /* OCR 인식 실패 안내 배너 */
+    .ocr-fail-banner {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-left: 4px solid #ef4444;
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.88rem;
+      color: #991b1b;
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .ocr-fail-icon {
+      font-size: 1.25rem;
+      line-height: 1;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .ocr-fail-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .ocr-fail-content strong {
+      font-size: 0.92rem;
+      color: #991b1b;
+    }
+
+    .ocr-fail-content span {
+      font-size: 0.82rem;
+      color: #b91c1c;
+    }
+
     /* 모바일 대응 (반응형 최적화) */
     @media (max-width: 600px) {
       body {
@@ -1035,6 +1075,15 @@
         <div class="ocr-notice-content">
           <strong>인식된 글자가 틀릴 수 있어요. 확인 후 분석해 주세요.</strong>
           <span>오타나 누락된 부분이 있다면 아래 입력창에서 직접 수정한 뒤 분석해 주세요.</span>
+        </div>
+      </div>
+
+      <!-- OCR 인식 실패 시 안내 문구 (요구사항: "글자를 찾지 못했어요. 대화를 직접 붙여넣어 주세요.") -->
+      <div id="ocrFailBanner" class="ocr-fail-banner" style="display: none;">
+        <span class="ocr-fail-icon">⚠️</span>
+        <div class="ocr-fail-content">
+          <strong>글자를 찾지 못했어요. 대화를 직접 붙여넣어 주세요.</strong>
+          <span>이미지가 너무 흐리거나 말풍선 글자를 찾지 못했습니다. 대화 내용을 복사하여 직접 붙여넣어 주세요.</span>
         </div>
       </div>
 
@@ -1458,6 +1507,8 @@
      * 탭 전환 함수: [텍스트로 입력] vs [캡처로 입력]
      */
     let currentInputTab = 'text';
+    // [수업 적용] 5강 객체 참조 — 선택된 캡처 파일 객체(Blob)의 참조를 저장하는 가변 변수
+    let currentImageFile = null;
 
     function switchInputTab(tab) {
       currentInputTab = tab;
@@ -1467,6 +1518,8 @@
       const captureController = document.getElementById('captureController');
       const sampleFillLink = document.getElementById('sampleFillLink');
       const chatInputLabel = document.getElementById('chatInputLabel');
+      const ocrNoticeBanner = document.getElementById('ocrNoticeBanner');
+      const ocrFailBanner = document.getElementById('ocrFailBanner');
 
       if (tab === 'text') {
         tabTextBtn.classList.add('active');
@@ -1475,6 +1528,8 @@
         captureController.style.display = 'none';
         if (sampleFillLink) sampleFillLink.style.display = 'inline';
         if (chatInputLabel) chatInputLabel.textContent = '대화 내용 붙여넣기';
+        if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'none';
+        if (ocrFailBanner) ocrFailBanner.style.display = 'none';
       } else {
         tabCaptureBtn.classList.add('active');
         tabTextBtn.classList.remove('active');
@@ -1497,6 +1552,7 @@
 
     /**
      * [수업 적용] 2강 Higher-Order Functions — FileReader의 onload 비동기 콜백 함수를 통한 이미지 로컬 미리보기
+     * [수업 적용] 5강 객체 참조 — 전달받은 File 객체의 참조를 currentImageFile에 보관
      * (원칙: 이미지는 서버로 전송하지 않고 브라우저 로컬 메모리에서만 렌더링 - 개인정보 보호)
      */
     function handleImageFile(file) {
@@ -1507,11 +1563,18 @@
         return;
       }
 
+      currentImageFile = file;
+
       const dropZone = document.getElementById('dropZone');
       const previewCard = document.getElementById('previewCard');
       const imagePreview = document.getElementById('imagePreview');
       const previewFileName = document.getElementById('previewFileName');
       const previewFileSize = document.getElementById('previewFileSize');
+      const ocrNoticeBanner = document.getElementById('ocrNoticeBanner');
+      const ocrFailBanner = document.getElementById('ocrFailBanner');
+
+      if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'none';
+      if (ocrFailBanner) ocrFailBanner.style.display = 'none';
 
       // 파일 정보 표시
       if (previewFileName) previewFileName.textContent = file.name;
@@ -1536,31 +1599,47 @@
      * 선택된 이미지 제거 (초기화)
      */
     function removeImage() {
+      currentImageFile = null;
       const imageInput = document.getElementById('imageInput');
       const dropZone = document.getElementById('dropZone');
       const previewCard = document.getElementById('previewCard');
       const imagePreview = document.getElementById('imagePreview');
       const ocrNoticeBanner = document.getElementById('ocrNoticeBanner');
+      const ocrFailBanner = document.getElementById('ocrFailBanner');
 
       if (imageInput) imageInput.value = '';
       if (imagePreview) imagePreview.src = '';
       if (dropZone) dropZone.style.display = 'flex';
       if (previewCard) previewCard.style.display = 'none';
       if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'none';
+      if (ocrFailBanner) ocrFailBanner.style.display = 'none';
     }
 
     /**
-     * [수업 적용] 5강 객체 참조 (불변 상수 참조) — 시연 대화를 가짜 OCR 인식 결과 Mock 데이터로 활용
-     * "글자 인식" 버튼 클릭 핸들러 (OCR 연결 전 Mock 단계)
+     * [수업 적용] 2강 Higher-Order Functions / 비동기 프로그래밍 (async / await)
+     *   - 1번의 recognizeChat 비동기 함수를 호출하여 브라우저 로컬(Tesseract.js)에서 글자 인식 수행
+     * [수업 적용] 5강 객체 참조 — 참조로서의 함수 매개변수 (currentImageFile 객체를 recognizeChat에 전달)
+     * "글자 인식" 버튼 클릭 핸들러 (실제 OCR 연결)
      */
-    function handleOcrExtract() {
+    async function handleOcrExtract() {
       const ocrBtn = document.getElementById('ocrBtn');
       const chatInput = document.getElementById('chatInput');
       const ocrNoticeBanner = document.getElementById('ocrNoticeBanner');
+      const ocrFailBanner = document.getElementById('ocrFailBanner');
 
       if (!ocrBtn || !chatInput) return;
 
-      // 1. 인식 진행 피드백 (버튼 로딩 표시)
+      if (!currentImageFile) {
+        showError('먼저 캡처 이미지를 선택해 주세요.');
+        return;
+      }
+
+      // 이전 배너들 초기화
+      if (ocrNoticeBanner) ocrNoticeBanner.style.display = 'none';
+      if (ocrFailBanner) ocrFailBanner.style.display = 'none';
+      hideError();
+
+      // 1. 인식 중 표시: 버튼 비활성화 + "글자 인식 중… (처음엔 10초 정도 걸려요)"
       const originalHTML = ocrBtn.innerHTML;
       ocrBtn.disabled = true;
       ocrBtn.innerHTML = `
@@ -1568,18 +1647,31 @@
           <circle cx="12" cy="12" r="10" stroke-opacity="0.25"></circle>
           <path d="M12 2a10 10 0 0 1 10 10"></path>
         </svg>
-        <span>글자 인식 중...</span>
+        <span>글자 인식 중… (처음엔 10초 정도 걸려요)</span>
       `;
 
-      // 2. 가짜 인식 결과는 현재 시연 대화(여러 위험 신호)를 그대로 입력창에 채워줌
-      setTimeout(() => {
-        ocrBtn.disabled = false;
-        ocrBtn.innerHTML = originalHTML;
+      try {
+        // [1번 연동] recognizeChat(file) 호출 (이미지는 서버로 보내지 않고 브라우저 내 Tesseract.js로만 처리)
+        if (typeof recognizeChat !== 'function') {
+          throw new Error('OCR 모듈(recognizeChat)을 불러오지 못했습니다.');
+        }
 
-        // 가짜 OCR 인식 텍스트 주입 (시연 대화 3번: 여러 위험 신호)
-        chatInput.value = PRESET_SAMPLES.danger;
+        const chat = await recognizeChat(currentImageFile);
 
-        // 안내 문구 표시 (요구사항: "인식된 글자가 틀릴 수 있어요. 확인 후 분석해 주세요.")
+        // 실패하거나 글자를 못 찾은 경우 ("글자를 찾지 못했어요. 대화를 직접 붙여넣어 주세요.")
+        if (!chat || !chat.trim()) {
+          if (ocrFailBanner) {
+            ocrFailBanner.style.display = 'flex';
+            ocrFailBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+          chatInput.focus();
+          return;
+        }
+
+        // 성공: 결과를 입력창에 채우기
+        chatInput.value = chat;
+
+        // 성공 안내 문구 표시 ("인식된 글자가 틀릴 수 있어요. 확인 후 분석해 주세요.")
         if (ocrNoticeBanner) {
           ocrNoticeBanner.style.display = 'flex';
           ocrNoticeBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -1587,7 +1679,17 @@
 
         clearEmptyInputError();
         chatInput.focus();
-      }, 500);
+      } catch (err) {
+        console.error('글자 인식 중 오류 발생:', err);
+        // 오류 발생 시에도 실패 안내 문구 표시
+        if (ocrFailBanner) {
+          ocrFailBanner.style.display = 'flex';
+          ocrFailBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      } finally {
+        ocrBtn.disabled = false;
+        ocrBtn.innerHTML = originalHTML;
+      }
     }
 
     // [수업 적용] 2강 일급 함수 (First-Class Functions) — 함수를 호출()하지 않고 일급 객체(값)로서 이벤트 리스너에 인자로 전달
