@@ -29,6 +29,14 @@ REFUSAL_GAP_RE = re.compile(
     r"(안전\s*(결제|거래)|번개\s*페이|안심\s*결제)(?!도)(?!\s*(로|으로))(?:(?!면\s)(?![가-힣](은|는)\s)[^.?!,]){0,15}?"
     r"(안\s|안$|안해|안 해|안돼|안 돼|안되|안 되|거절|싫|하지\s*않|하지\s*마|안\s*받|못\s*해|어려워|불가)"
 )
+# 수수료·손해를 핑계로 계좌이체를 시키는 문장 (#83 리뷰)
+# 예) "안전결제는 수수료가 비싸서 계좌로 주세요", "안전거래는 손해라 이체로 부탁드려요"
+# - "비싸/손해" 뒤에 계좌·이체·입금·현금이 와야 거부로 봄
+#   → "안전결제 수수료 비싸서 제가 반 내드릴게요"처럼 판매자가 부담하는 말은 제외
+REFUSAL_FEE_RE = re.compile(
+    r"(안전\s*(결제|거래)|번개\s*페이|안심\s*결제)(?!도)(?!\s*(로|으로))[^.?!,]{0,10}?"
+    r"(수수료|비싸|손해)[^.?!]{0,12}?(계좌|이체|입금|현금)"
+)
 # 거부가 아니라 "해도 되고 안 해도 돼요"처럼 선택을 맡기는 문장은 제외 (#57)
 REFUSAL_EXCLUDE = ["해도 돼", "해도 되", "해도돼", "해도되"]
 
@@ -43,7 +51,7 @@ def detect_safe_payment_refusal(messages: list[Message]) -> list[Signal]:
             continue
         if any(w in m["text"] for w in REFUSAL_EXCLUDE):
             continue
-        found = REFUSAL_RE.search(m["text"]) or REFUSAL_GAP_RE.search(m["text"])
+        found = REFUSAL_RE.search(m["text"]) or REFUSAL_GAP_RE.search(m["text"]) or REFUSAL_FEE_RE.search(m["text"])
         if found:
             signals.append({
                 "code": "SAFE_PAYMENT_REFUSAL",
@@ -144,8 +152,11 @@ EXTRA_PAYMENT_PATTERNS = [
     r"(다시|한\s*번\s*더|(?<![가-힣])재)\s*(입금|송금|결제)",   # "현재 결제"의 "재"는 제외
     r"(입금|송금|결제)(을|를)?\s*(다시|한\s*번\s*더)\s*(해|하|완료|진행|보내)",   # "입금 다시 확인해 볼게요"는 제외
     r"추가\s*(로)?[^.?!,]{0,8}?(입금|송금|결제)",                       # "추가로 3천원 송금해 주셔야"
-    r"\d+\s*(천|만)?\s*원\s*(만)?\s*더\s*(입금|송금|결제|보내)",           # "3천원 더 보내주셔야"
+    r"\d[\d,]*\s*(천|만)?\s*원\s*(만)?\s*더\s*(입금|송금|결제|보내)",      # "3천원 더 보내주셔야", "1,000원 더 보내주셔야"
     r"\d+\s*(천|만)\s*(\d+\s*(천|백)\s*)?원?\s*다시\s*(보내|넣어)",       # "5만 2천원 다시 보내주세요"
+    # 쉼표 숫자 금액 + 다시 보내기 (#83 리뷰, T-박태민-03): "321,000원 다시 보내주시면"
+    # → 금액이 있어야만 잡음: "사진 다시 보내주세요"는 제외
+    r"\d[\d,]*\s*원\s*(을|를|으로)?\s*다시\s*(보내|넣어)",
     r"(보관료|보증금|인증비|인증금|해제비|등록비)[^.?!]{0,20}?(넣어|입금|송금|보내)",   # "보증금은 계좌로 넣어주시면"
 ]
 # 환불·반환을 미끼로 돈을 더 보내게 하는 말 (아래 목록은 EXTRA_PAYMENT_EXCLUDE와 상관없이 검사)
@@ -168,11 +179,15 @@ def detect_extra_payment(messages: list[Message]) -> list[Signal]:
     for i, m in enumerate(messages):
         if m["speaker"] == "buyer":     # 구매자 발언은 검사하지 않음
             continue
-        # 판매자가 돌려주는 말이면 일반 패턴은 건너뛰고, 환불 미끼 패턴만 검사
-        returning = any(w in m["text"] for w in EXTRA_PAYMENT_EXCLUDE)
-        patterns = REFUND_BAIT_PATTERNS if returning else EXTRA_PAYMENT_PATTERNS + REFUND_BAIT_PATTERNS
-        for p in patterns:
+        for p in EXTRA_PAYMENT_PATTERNS + REFUND_BAIT_PATTERNS:
             found = re.search(p, m["text"])
+            # 판매자가 돌려주는 말("다시 입금해 드릴게요")이면 일반 패턴은 건너뜀 (환불 미끼 패턴은 그대로 검사)
+            # → 잡힌 부분 바로 뒤(6글자)만 봄: "321,000원 다시 보내주시면 ... 처리해드릴게요"처럼
+            #   문장 끝의 다른 "드릴게"까지 보고 놓치지 않도록 (#83 리뷰, T-박태민-03)
+            if found and p not in REFUND_BAIT_PATTERNS:
+                near = m["text"][found.start():found.end() + 6]
+                if any(w in near for w in EXTRA_PAYMENT_EXCLUDE):
+                    continue
             if found:
                 signals.append({
                     "code": "EXTRA_PAYMENT",
@@ -228,7 +243,7 @@ def detect_account_name_mismatch(messages: list[Message]) -> list[Signal]:
 # 판매자 문장에 "안전결제"가 없어도, 바로 앞 구매자 말이 안전결제·앱 결제를 물었으면 거부로 봄
 SAFE_PAYMENT_ASK_RE = re.compile(r"안전\s*(결제|거래)|번개\s*페이|안심\s*(결제|거래)|앱\s*(에서|으로)")
 REFUSAL_REPLY_RE = re.compile(
-    r"^(그건|그거는|그거|그건요|앱은|앱으로는)[^.?!]{0,20}?"
+    r"^(그건|그거는|그거|그건요|앱은|앱으로는|여기는|여기선|거기는|거긴)[^.?!]{0,20}?"   # "여기는 수수료도 비싸고" (#83 T-장세은-01)
     r"(수수료|손해|비싸|번거|정산이?\s*늦|안\s*돼|안\s*해|어려워|못\s*해|불가)"
 )
 
