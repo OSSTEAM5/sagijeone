@@ -305,3 +305,41 @@ def detect_purchase_confirm_first(messages: list[Message]) -> list[Signal]:
                 break   # 한 문장에서 같은 신호는 한 번만
     return signals
 
+
+
+# ---- #85 판매자가 보낸 링크에서 로그인·본인 인증 요구 (T-장세은-04) ----
+# 가짜 안전결제 페이지로 보낸 뒤 로그인·인증·카드 정보를 넣게 하는 피싱 수법
+# - 판매자가 앞에서 링크를 보낸 대화에서만 검사
+#   → "앱에서 본인 인증 하셔야 안전결제 돼요"처럼 링크 없는 정상 안내는 제외
+SELLER_LINK_RE = re.compile(r"(https?|hxxps?)://|www\.|\[\.\]", re.IGNORECASE)
+LINK_CREDENTIAL_RE = re.compile(
+    r"(로그인|본인\s*인증|인증\s*번호|비밀\s*번호|카드\s*번호)[^.?!]{0,15}?"
+    r"(하셔야|해야|해\s*주|입력|넣어|하시면|알려)"
+)
+
+
+# [수업 적용] 4강 Decorator — @detector로 탐지기 자동 등록
+@detector
+def detect_link_credential(messages: list[Message]) -> list[Signal]:
+    """판매자가 보낸 링크에서 로그인·본인 인증·카드 정보 입력을 요구하는 표현"""
+    signals = []
+    seller_sent_link = False
+    for i, m in enumerate(messages):
+        if m["speaker"] == "buyer":     # 구매자 발언은 검사하지 않음
+            continue
+        if SELLER_LINK_RE.search(m["text"]):
+            seller_sent_link = True
+        if not seller_sent_link:
+            continue
+        found = LINK_CREDENTIAL_RE.search(m["text"])
+        if found:
+            signals.append({
+                "code": "LINK_CREDENTIAL",
+                "signal": "링크에서 로그인·인증 요구",
+                "message_index": m.get("index", i),
+                "match": found.group(),
+                "evidence": m["text"],
+                "weight": 3,        # 계정·카드 정보 탈취로 바로 이어지는 수법
+                "advice": "판매자가 보낸 링크에서 로그인이나 본인 인증을 하지 마세요. 결제는 거래 앱 안에서만 하세요.",
+            })
+    return signals

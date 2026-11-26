@@ -166,3 +166,23 @@ def test_review83_miss_detected(text, code):
 ])
 def test_review83_miss_not_detected(text):
     assert codes(text) == []
+
+
+# ---- #85 판매자가 보낸 링크에서 로그인·본인 인증 요구 ----
+
+@pytest.mark.parametrize("text", [
+    "판매자: hxxps://pay-check[.]site/a 여기서 결제해 주세요\n구매자: 로그인하라고 나와요\n판매자: 네 로그인 한 번 하셔야 결제돼요",
+    "판매자: https://safe-order.xyz/1 들어가셔서 카드번호 입력해 주시면 돼요",
+    "판매자: 링크 보내드렸어요 https://a.shop/p\n판매자: 문자로 온 인증번호 알려주시면 처리해 드릴게요",
+])
+def test_link_credential_detected(text):
+    assert "LINK_CREDENTIAL" in codes(text)
+
+
+@pytest.mark.parametrize("text", [
+    "판매자: 앱에서 본인 인증 하셔야 안전결제 돼요",                       # 링크 없는 정상 안내
+    "구매자: https://bunjang.co.kr 에서 로그인해야 하나요?",                 # 구매자 말
+    "판매자: https://www.daangn.com 공식 앱 링크예요\n판매자: 거기서 결제하시면 돼요",
+])
+def test_link_credential_not_detected(text):
+    assert "LINK_CREDENTIAL" not in codes(text)
