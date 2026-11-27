@@ -58,6 +58,9 @@ LABEL_TO_CODE = {
     "가짜 고객센터 링크": "URL_ANY",
     "가짜 배송조회 링크": "URL_ANY",
     "링크에서 로그인·인증 요구": "LINK_CREDENTIAL",
+    "개인정보 및 재인증 요구": "LINK_CREDENTIAL",
+    "환불 미끼": "EXTRA_PAYMENT",
+    "물건 수령 전 구매확정 요구": "PURCHASE_CONFIRM_FIRST",
 }
 URL_CODES = {"URL_LOOKALIKE", "URL_IMPERSONATION", "URL_SHORTENER", "URL_IP_ADDRESS"}
 CODE_NAME = {
