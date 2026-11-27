@@ -58,6 +58,8 @@ LABEL_TO_CODE = {
     "가짜 고객센터 링크": "URL_ANY",
     "가짜 배송조회 링크": "URL_ANY",
     "링크에서 로그인·인증 요구": "LINK_CREDENTIAL",
+    "가짜 안전결제 피싱 링크": "URL_ANY",
+    "직거래 파기 후 선입금 유도": "PAYMENT_PRESSURE",
     "개인정보 및 재인증 요구": "LINK_CREDENTIAL",
     "환불 미끼": "EXTRA_PAYMENT",
     "물건 수령 전 구매확정 요구": "PURCHASE_CONFIRM_FIRST",
@@ -83,6 +85,8 @@ CODE_NAME = {
 HEAD_MAIN = re.compile(r"^## ([NR]\d+)\. (정상|위험)")
 # samples_blind 형식: ## T-정윤재-01 | 위험 | 기대 신호: 외부 메신저 유도, 추가 입금 요구
 HEAD_BLIND = re.compile(r"^## (\S+)\s*\|\s*(정상|위험)\s*\|\s*기대 신호:\s*(.*)$")
+# 대화 한 줄 (``` 상자 없이 바로 적은 표본도 읽기 위해 사용)
+CHAT_LINE = re.compile(r"^(구매자|판매자)\s*:")
 
 
 # [수업 적용] 2강 Function Annotations — 표본 한 개를 dict로, 여러 개를 list[dict]로 돌려준다고 타입 힌트로 명시
@@ -110,7 +114,7 @@ def read_samples(path: Path) -> list[dict]:
         if line.startswith("```"):
             in_code = not in_code
             continue
-        if in_code:
+        if in_code or CHAT_LINE.match(line):
             cur["lines"].append(line)
         elif line.startswith("| 신호 |"):
             # samples.md 의 "| 신호 | 기대 | 실제 |" 줄에서 기대 칸의 `코드`만 꺼낸다
@@ -217,7 +221,11 @@ def to_markdown(r: dict, files: list[Path]) -> str:
 def main() -> None:
     files = [p for p in SAMPLE_FILES if p.exists()]
     # [수업 적용] 2강 지능형 리스트 — 여러 파일의 표본을 한 리스트로 펼침
-    samples = [s for p in files for s in read_samples(p)]
+    per_file = {p: read_samples(p) for p in files}
+    for p, found in per_file.items():
+        mark = "" if found else "  ← 대화를 하나도 못 읽음! 파일 형식 확인 필요"
+        print(f"{p.name}: {len(found)}개{mark}")
+    samples = [s for found in per_file.values() for s in found]
     r = measure(samples)
     OUT.write_text(to_markdown(r, files), encoding="utf-8")
 
