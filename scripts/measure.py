@@ -42,7 +42,21 @@ LABEL_TO_CODE = {
     "단축 URL": "URL_SHORTENER",
     "IP 주소로 된 링크": "URL_IP_ADDRESS",
     "IP 주소 링크": "URL_IP_ADDRESS",
+    "선입금 재촉": "PAYMENT_PRESSURE",
+    "추가 입금 요구": "EXTRA_PAYMENT",
+    "수수료 명목 추가 입금 요구": "EXTRA_PAYMENT",
+    "보증금 명목 추가 입금 유도": "EXTRA_PAYMENT",
+    "결제 후 대금 보관료 요구": "EXTRA_PAYMENT",
+    "환불을 조건으로 추가 송금 유도": "EXTRA_PAYMENT",
+    "예금주 불일치": "ACCOUNT_NAME_MISMATCH",
+    "타인 명의 계좌": "ACCOUNT_NAME_MISMATCH",
+    "타인 명의 계좌 유도": "ACCOUNT_NAME_MISMATCH",
+    "수령 전 구매확정 요구": "PURCHASE_CONFIRM_FIRST",
+    # 결제 링크는 URL 탐지기 4종 중 하나라도 잡으면 맞힌 것으로 본다
+    "가짜 결제 링크": "URL_ANY",
+    "판매자가 보낸 결제 링크": "URL_ANY",
 }
+URL_CODES = {"URL_LOOKALIKE", "URL_IMPERSONATION", "URL_SHORTENER", "URL_IP_ADDRESS"}
 CODE_NAME = {
     "SAFE_PAYMENT_REFUSAL": "안전결제 거부",
     "PAYMENT_PRESSURE": "빠른 입금 요구",
@@ -52,6 +66,10 @@ CODE_NAME = {
     "URL_IMPERSONATION": "공식 사이트 사칭 의심",
     "URL_SHORTENER": "단축 URL",
     "URL_IP_ADDRESS": "IP 주소로 된 링크",
+    "EXTRA_PAYMENT": "추가 입금 요구",
+    "ACCOUNT_NAME_MISMATCH": "예금주 불일치",
+    "PURCHASE_CONFIRM_FIRST": "수령 전 구매확정 요구",
+    "URL_ANY": "의심 링크 (URL 탐지기 중 하나)",
 }
 
 # samples.md 형식:  ## N01. 정상 — 기본 정상 대화
@@ -104,6 +122,10 @@ def measure(samples: list[dict]) -> dict:
         result = analyze("\n".join(s["lines"]))
         # [수업 적용] 2강 Set 컴프리헨션 — 실제로 나온 신호 코드만 모음 (중복 제거)
         actual = {sig["code"] for sig in result["signals"]}
+        if "URL_ANY" in s["expected"]:
+            # "결제 링크"처럼 링크 종류를 정하지 않은 기대 신호는 실제로 나온 URL 신호로 바꿔서 비교
+            found = actual & URL_CODES
+            s["expected"] = (s["expected"] - {"URL_ANY"}) | (found or {"URL_ANY"})
         s["actual"], s["level"] = actual, result["level"]
 
         is_fp = s["kind"] == "정상" and bool(actual)
