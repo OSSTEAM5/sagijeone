@@ -139,3 +139,50 @@ def test_blind_miss_detected(text, code):
 ])
 def test_blind_miss_not_detected(text):
     assert codes(text) == []
+
+
+# ---- #83 리뷰에서 찾은 미탐 (표본 문장을 그대로 쓰지 않고 같은 수법의 다른 문장으로 시험) ----
+
+@pytest.mark.parametrize("text, code", [
+    ("판매자: 451,000원 다시 보내주시면 먼저 보내신 돈은 자동 환불돼요", "EXTRA_PAYMENT"),
+    ("판매자: 1,000원 더 보내주셔야 출금이 풀려요", "EXTRA_PAYMENT"),
+    ("판매자: 451,000원 다시 보내주시면 바로 처리해드릴게요", "EXTRA_PAYMENT"),   # 문장 끝 "드릴게"에 가려지던 경우
+    ("구매자: 안전결제 가능할까요?\n판매자: 여기는 수수료가 비싸서요 계좌로 주세요", "SAFE_PAYMENT_REFUSAL"),
+    ("판매자: 안전결제는 수수료가 비싸서 계좌로 주세요", "SAFE_PAYMENT_REFUSAL"),
+    ("판매자: 안전거래는 손해라 이체로 부탁드려요", "SAFE_PAYMENT_REFUSAL"),
+])
+def test_review83_miss_detected(text, code):
+    assert code in codes(text)
+
+
+@pytest.mark.parametrize("text", [
+    "판매자: 사진 다시 보내드릴게요",
+    "판매자: 송장 사진 다시 보내주세요",
+    "판매자: 32,000원 다시 입금해 드릴게요",                       # 판매자가 돌려주는 말
+    "판매자: 확인해 보니 중복이라 다시 송금해드렸어요",
+    "판매자: 안전결제 수수료 비싸서 제가 반 부담할게요",
+    "판매자: 안전결제로 하시면 수수료는 제가 낼게요",
+    "구매자: 안전결제 되나요?\n판매자: 여기는 안전결제 잘 돼요",
+])
+def test_review83_miss_not_detected(text):
+    assert codes(text) == []
+
+
+# ---- #85 판매자가 보낸 링크에서 로그인·본인 인증 요구 ----
+
+@pytest.mark.parametrize("text", [
+    "판매자: hxxps://pay-check[.]site/a 여기서 결제해 주세요\n구매자: 로그인하라고 나와요\n판매자: 네 로그인 한 번 하셔야 결제돼요",
+    "판매자: https://safe-order.xyz/1 들어가셔서 카드번호 입력해 주시면 돼요",
+    "판매자: 링크 보내드렸어요 https://a.shop/p\n판매자: 문자로 온 인증번호 알려주시면 처리해 드릴게요",
+])
+def test_link_credential_detected(text):
+    assert "LINK_CREDENTIAL" in codes(text)
+
+
+@pytest.mark.parametrize("text", [
+    "판매자: 앱에서 본인 인증 하셔야 안전결제 돼요",                       # 링크 없는 정상 안내
+    "구매자: https://bunjang.co.kr 에서 로그인해야 하나요?",                 # 구매자 말
+    "판매자: https://www.daangn.com 공식 앱 링크예요\n판매자: 거기서 결제하시면 돼요",
+])
+def test_link_credential_not_detected(text):
+    assert "LINK_CREDENTIAL" not in codes(text)
