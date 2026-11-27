@@ -55,6 +55,9 @@ LABEL_TO_CODE = {
     # 결제 링크는 URL 탐지기 4종 중 하나라도 잡으면 맞힌 것으로 본다
     "가짜 결제 링크": "URL_ANY",
     "판매자가 보낸 결제 링크": "URL_ANY",
+    "가짜 고객센터 링크": "URL_ANY",
+    "가짜 배송조회 링크": "URL_ANY",
+    "링크에서 로그인·인증 요구": "LINK_CREDENTIAL",
 }
 URL_CODES = {"URL_LOOKALIKE", "URL_IMPERSONATION", "URL_SHORTENER", "URL_IP_ADDRESS"}
 CODE_NAME = {
@@ -69,6 +72,7 @@ CODE_NAME = {
     "EXTRA_PAYMENT": "추가 입금 요구",
     "ACCOUNT_NAME_MISMATCH": "예금주 불일치",
     "PURCHASE_CONFIRM_FIRST": "수령 전 구매확정 요구",
+    "LINK_CREDENTIAL": "링크에서 로그인·인증 요구",
     "URL_ANY": "의심 링크 (URL 탐지기 중 하나)",
 }
 
